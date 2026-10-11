@@ -1,0 +1,280 @@
+/* ==========================================================================
+   MediCare - Boxy Clinical Healthcare UI Stylesheet
+   Crafted with structured geometric layout & Anek Bangla Typography
+   ========================================================================== */
+
+/* Sole Typography: Anek Bangla with Plus Jakarta Sans & JetBrains Mono for digits */
+@import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+:root {
+    --clinical-navy: #0f2744;
+    --clinical-blue: #0284c7;
+    --clinical-teal: #0f766e;
+    --clinical-bg: #f8fafc;
+    --clinical-border: #cbd5e1;
+    --radius-box: 6px;
+    --radius-box-lg: 8px;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, div, a, label {
+    font-family: 'Anek Bangla', 'Plus Jakarta Sans', sans-serif !important;
+}
+
+body {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
+    background-color: #f8fafc;
+    color: #0f172a;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body {
+    background-color: #0b1120;
+    color: #f1f5f9;
+}
+
+/* Digits & Monospace: always fallback to Anek Bangla so Bangla text & digits never break */
+.font-mono {
+    font-family: 'JetBrains Mono', 'Anek Bangla', 'Plus Jakarta Sans', monospace !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background-color: #334155;
+}
+
+/* Accessible Focus States */
+*:focus-visible {
+    outline: 2px solid #0284c7 !important;
+    outline-offset: 1px;
+}
+
+/* Boxy Panels & Cards */
+.box-panel {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+}
+
+.dark .box-panel {
+    background: #0f172a;
+    border: 1px solid #334155;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Structured Boxy Cards */
+.med-card {
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.med-card:hover {
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+
+.dark .med-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+}
+
+.dark .med-card:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Dashboard Logo Watermark */
+.dashboard-watermark {
+    position: absolute;
+    right: 16px;
+    bottom: -15px;
+    width: 220px;
+    height: 220px;
+    opacity: 0.11;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+}
+
+@media (max-width: 640px) {
+    .dashboard-watermark {
+        width: 150px;
+        height: 150px;
+        right: 4px;
+        bottom: -10px;
+        opacity: 0.08;
+    }
+}
+
+/* Alarm Ring Pulse Animation */
+@keyframes pulse-ring {
+    0% { transform: scale(0.98); opacity: 0.85; }
+    50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 25px rgba(217, 119, 6, 0.6); }
+    100% { transform: scale(0.98); opacity: 0.85; }
+}
+
+.alarm-ring {
+    animation: pulse-ring 1.3s infinite ease-in-out;
+}
+
+/* Low Stock Alert Badge */
+@keyframes stock-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.low-stock-badge {
+    animation: stock-blink 1.8s ease-in-out infinite;
+}
+
+/* Boxy Modal Animation */
+@keyframes box-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.97) translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-animate {
+    animation: box-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Toast Notification System */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+@media (max-width: 640px) {
+    .toast-container {
+        bottom: 76px;
+        left: 12px;
+        right: 12px;
+    }
+}
+
+.toast-item {
+    pointer-events: auto;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 11px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    border: 1px solid #334155;
+    animation: toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-item.toast-success {
+    background: #064e3b;
+    border-left: 4px solid #10b981;
+}
+
+.toast-item.toast-danger {
+    background: #881337;
+    border-left: 4px solid #f43f5e;
+}
+
+.toast-item.toast-info {
+    background: #0c4a6e;
+    border-left: 4px solid #38bdf8;
+}
+
+@keyframes toast-in {
+    0% { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Boxy Water Gauge */
+.water-gauge-box {
+    position: relative;
+    overflow: hidden;
+    background: #e0f2fe;
+    border: 2px solid #38bdf8;
+    border-radius: 6px;
+}
+
+.dark .water-gauge-box {
+    background: #082f49;
+    border-color: #0284c7;
+}
+
+.water-fill-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0284c7;
+    transition: height 0.5s ease;
+}
+
+/* Boxy Tabs */
+.nav-tab.active {
+    background-color: #0f2744;
+    color: #ffffff !important;
+    border-color: #0f2744 !important;
+}
+
+.dark .nav-tab.active {
+    background-color: #0284c7;
+    color: #ffffff !important;
+    border-color: #0284c7 !important;
+}
+
+/* Status Indicator Dot */
+.status-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background-color: #10b981;
+    display: inline-block;
+}
+
+/* Print mode */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    header, nav, .no-print, button, .mobile-bottom-bar, .toast-container {
+        display: none !important;
+    }
+}

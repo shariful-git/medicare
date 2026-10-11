@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="bn" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f2744">
+    <meta name="description" content="মেডিকেয়ার - আধুনিক ক্লিনিক্যাল ঔষধ ও ইনজেকশন রিমাইন্ডার এবং হেলথ কেয়ার পোর্টাল">
+    <title>মেডিকেয়ার | Clinical Medicine & Injection Schedule</title>
+
+    <!-- Tailwind CSS CDN (with console production notice suppressor) -->
+    <script>
+        (function() {
+            const origWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+                    return;
+                }
+                origWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Anek Bangla & Plus Jakarta Sans & JetBrains Mono for Digits -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- WebAssembly SQLite (sql.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/sql-wasm.js"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Anek Bangla"', '"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        clinicalNavy: {
+                            800: '#162a45',
+                            900: '#0f2744',
+                            950: '#09182b',
+                        },
+                        clinicalBlue: {
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Boxy Clinical Custom Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-600 selection:text-white transition-colors duration-200 pb-24 sm:pb-8">
+
+    <!-- Main Navigation Header -->
+    <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-md bg-[#0f2744] dark:bg-[#0284c7] text-white flex items-center justify-center shrink-0 border border-slate-300/40 dark:border-sky-500/30">
+                    <i data-lucide="cross" class="w-6 h-6 stroke-[2.4]"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+                        <span data-i18n="app_title">মেডিকেয়ার</span>
+                        <span data-i18n="app_badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border border-sky-200 dark:border-sky-800 hidden sm:inline-block">ক্লিনিক্যাল সংস্করণ</span>
+                    </h1>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        <span id="headerCurrentDate">Loading date...</span>
+                        <span class="hidden md:inline-block text-slate-300 dark:text-slate-700">•</span>
+                        <!-- Status indicator -->
+                        <span class="hidden md:inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
+                            <span class="status-indicator"></span>
+                            <span data-i18n="active_status">সক্রিয়</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls (Clock, Language Switcher, Theme, Audio, Alert) -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="text-right hidden md:block pr-2.5 border-r border-slate-300 dark:border-slate-800">
+                    <span id="liveClock" class="font-mono text-sm font-bold text-[#0f2744] dark:text-sky-400 tracking-wider">00:00:00</span>
+                    <span data-i18n="system_time" class="text-[10px] block text-slate-400 font-medium">সিস্টেম সময়</span>
+                </div>
+
+                <!-- Language Toggle Button (Boxy, Thumb-friendly) -->
+                <button onclick="window.MediCareI18n.toggleLanguage()" id="langToggleBtn" title="Switch Language (বাং / EN)" class="min-h-[40px] px-2.5 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition flex items-center gap-1.5 active:scale-95 shadow-xs font-bold text-xs">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-[#0284c7] dark:text-sky-400"></i>
+                    <span id="currentLangLabel">বাং</span>
+                </button>
+
+                <!-- Dark / Light Mode Toggle -->
+                <button onclick="toggleTheme()" title="থিম পরিবর্তন করুন" class="min-h-[40px] min-w-[40px] p-2 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center justify-center active:scale-95 shadow-xs">
+                    <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Audio Sound Toggle -->
+                <button id="toggleSoundBtn" title="সাউন্ড অন/অফ করুন" class="min-h-[40px] min-w-[40px] p-2 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center justify-center active:scale-95 shadow-xs">
+                    <i data-lucide="volume-2" id="soundIcon" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Push Notification Permission Button -->
+                <button id="notiPermBtn" class="min-h-[40px] px-3 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                    <i data-lucide="bell" class="w-3.5 h-3.5 text-[#0284c7] dark:text-sky-400"></i>
+                    <span id="notiPermLabel" data-i18n="alert_btn">অ্যালার্ট</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Hero Status Banner with Background Medical Logo Watermark -->
+        <section class="relative overflow-hidden bg-[#0f2744] dark:bg-[#09182b] rounded-lg p-5 sm:p-6 text-white border border-[#1e3a5f] shadow-sm">
+            <!-- Background Medical Logo Watermark -->
+            <div class="dashboard-watermark" aria-hidden="true">
+                <svg viewBox="0 0 200 200" fill="currentColor" class="w-full h-full text-white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M85 20H115V85H180V115H115V180H85V115H20V85H85V20Z" fill="currentColor" fill-opacity="0.3"/>
+                    <circle cx="100" cy="100" r="88" stroke="currentColor" stroke-width="4" stroke-opacity="0.35" stroke-dasharray="6 6" fill="none"/>
+                    <circle cx="100" cy="100" r="76" stroke="currentColor" stroke-width="2" stroke-opacity="0.25" fill="none"/>
+                    <path d="M70 100H85L93 82L107 118L115 100H130" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-opacity="0.55"/>
+                </svg>
+            </div>
+
+            <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+                <div class="space-y-2 max-w-xl">
+                    <div class="flex items-center gap-2">
+                        <span id="heroGreetingText" class="text-xs font-bold px-2.5 py-0.5 rounded bg-white/10 text-sky-200 border border-white/15">
+                            শুভ দিন!
+                        </span>
+                        <span data-i18n="hero_tagline" class="text-xs text-slate-300 font-medium hidden sm:inline">নিয়মিত সময়সূচি অনুযায়ী ঔষধ সেবন নিশ্চিত করুন</span>
+                    </div>
+
+                    <h2 data-i18n="hero_title" class="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight">দৈনিক ঔষধ ও ইনজেকশন সেবা সূচি</h2>
+                    <p data-i18n="hero_desc" class="text-slate-300 text-xs sm:text-sm leading-relaxed">ট্যাবলেট, ইনজেকশন কিংবা সিরাপ—প্রতিটি ঔষধের নির্ভুল শিডিউল, রিমাইন্ডার এবং ক্লিনিক্যাল অ্যালার্ট।</p>
+                    
+                    <!-- Progress Bar for Today's Routine -->
+                    <div class="pt-1.5">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-200 mb-1">
+                            <span data-i18n="progress_label">আজকের রুটিন সম্পন্ন:</span>
+                            <span id="statPercent" class="font-extrabold font-mono text-white text-sm">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-black/40 rounded overflow-hidden p-0 border border-white/10">
+                            <div id="dailyProgressBar" class="h-full bg-[#0284c7] transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Chips -->
+                    <div class="flex items-center gap-2.5 pt-1 text-xs font-semibold text-slate-200 flex-wrap">
+                        <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded bg-sky-400"></span> <span data-i18n="stat_total">মোট:</span> <b id="statTotal" class="text-white font-mono">0</b>
+                        </span>
+                        <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded bg-amber-400"></span> <span data-i18n="stat_pending">বাকি:</span> <b id="statPending" class="text-white font-mono">0</b>
+                        </span>
+                        <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded bg-emerald-400"></span> <span data-i18n="stat_taken">সম্পন্ন:</span> <b id="statTaken" class="text-white font-mono">0</b>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto shrink-0">
+                    <button onclick="openModal()" class="min-h-[44px] px-4 py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 active:scale-95">
+                        <i data-lucide="plus-circle" class="w-4 h-4 stroke-[2.5]"></i>
+                        <span data-i18n="add_routine_btn">নতুন রুটিন যোগ করুন</span>
+                    </button>
+                    <button onclick="printPrescriptionSchedule()" class="min-h-[44px] px-3.5 py-2.5 rounded-md bg-white/10 hover:bg-white/15 border border-white/20 text-white font-medium text-xs transition flex items-center justify-center gap-2 active:scale-95">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span data-i18n="print_prescription_btn">প্রেসক্রিপশন প্রিন্ট</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature & Utility Navigation Tabs (Desktop) -->
+        <nav class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-bold text-slate-700 dark:text-slate-300">
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-tab active min-h-[40px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 transition flex items-center gap-2 whitespace-nowrap shadow-xs">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span data-i18n="tab_schedule">ঔষধ শিডিউল</span>
+            </button>
+            <button onclick="switchTab('tools')" id="tab-tools" class="nav-tab min-h-[40px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-2 whitespace-nowrap shadow-xs">
+                <i data-lucide="droplet" class="w-4 h-4 text-sky-500"></i>
+                <span data-i18n="tab_tools">পানি ও বিএমআই টুলস</span>
+            </button>
+            <button onclick="switchTab('history')" id="tab-history" class="nav-tab min-h-[40px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-2 whitespace-nowrap shadow-xs">
+                <i data-lucide="history" class="w-4 h-4 text-indigo-500"></i>
+                <span data-i18n="tab_history">সেবনের ইতিহাস</span>
+            </button>
+            <button onclick="switchTab('emergency')" id="tab-emergency" class="nav-tab min-h-[40px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-2 whitespace-nowrap shadow-xs">
+                <i data-lucide="phone-call" class="w-4 h-4 text-rose-500"></i>
+                <span data-i18n="tab_emergency">জরুরি হেল্পলাইন</span>
+            </button>
+        </nav>
+
+        <!-- ============================================================ -->
+        <!-- VIEW 1: SCHEDULE VIEW -->
+        <!-- ============================================================ -->
+        <div id="view-schedule" class="app-view space-y-4">
+            <!-- Search & Filter Controls -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+                <!-- Search Bar -->
+                <div class="relative flex-1 max-w-md">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="medSearchInput" data-i18n-placeholder="search_placeholder" placeholder="ঔষধের নাম বা নোট দিয়ে খুঁজুন..." class="w-full pl-9 pr-3.5 py-2.5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition shadow-xs">
+                </div>
+
+                <div class="flex items-center justify-between sm:justify-end gap-2.5">
+                    <!-- Filter Segmented Tabs -->
+                    <div class="flex items-center bg-slate-200/80 dark:bg-slate-900 p-1 rounded-md text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-800">
+                        <button onclick="setFilter('all')" id="filter-all" data-i18n="filter_all" class="filter-tab px-3 py-1.5 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs transition">সবগুলো</button>
+                        <button onclick="setFilter('pending')" id="filter-pending" data-i18n="filter_pending" class="filter-tab px-3 py-1.5 rounded hover:text-slate-900 dark:hover:text-white transition">বাকি আছে</button>
+                        <button onclick="setFilter('taken')" id="filter-taken" data-i18n="filter_taken" class="filter-tab px-3 py-1.5 rounded hover:text-slate-900 dark:hover:text-white transition">সেবন করেছি</button>
+                    </div>
+
+                    <!-- Sound Test Trigger -->
+                    <button onclick="triggerDemoAlert()" class="text-xs min-h-[38px] px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-[#0284c7] dark:hover:text-sky-400 flex items-center gap-1.5 font-semibold transition shrink-0 active:scale-95">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                        <span data-i18n="sound_test">সাউন্ড টেস্ট</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Medicine List Container -->
+            <div id="medicineList" class="space-y-3 pb-8">
+                <!-- Injected dynamically by js/ui.js -->
+            </div>
+
+            <!-- Empty State Placeholder -->
+            <div id="emptyState" class="hidden text-center py-14 px-4 rounded-md border border-dashed border-slate-300 dark:border-slate-800 bg-white/40 dark:bg-slate-900/40">
+                <div class="w-14 h-14 mx-auto rounded-md bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-[#0284c7] dark:text-sky-400 mb-2.5">
+                    <i data-lucide="clipboard-list" class="w-7 h-7"></i>
+                </div>
+                <h3 id="emptyStateTitle" data-i18n="empty_title" class="font-bold text-slate-800 dark:text-slate-200 text-base">কোনো রুটিন পাওয়া যায়নি</h3>
+                <p id="emptyStateDesc" data-i18n="empty_desc" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">আপনার ঔষধ বা ইনজেকশনের নিয়ম যুক্ত করতে নতুন রুটিন যোগ করুন।</p>
+                <button onclick="openModal()" id="emptyStateBtn" class="mt-3.5 min-h-[44px] px-4 py-2 text-xs font-bold rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white transition shadow-xs active:scale-95">
+                    <span data-i18n="add_routine_btn">+ নতুন রুটিন যোগ করুন</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VIEW 2: WATER & HEALTH TOOLS VIEW -->
+        <!-- ============================================================ -->
+        <div id="view-tools" class="app-view hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Tool A: Hydration Tracker -->
+            <div class="p-5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-md bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
+                            <i data-lucide="droplet" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 data-i18n="water_title" class="font-bold text-sm text-slate-900 dark:text-white">পানি পানের ট্র্যাকার</h3>
+                            <p data-i18n="water_subtitle" class="text-[11px] text-slate-400">প্রতিদিন পর্যাপ্ত পানি পান সুস্থতার চাবিকাঠি</p>
+                        </div>
+                    </div>
+                    <span id="waterPercentText" class="text-base font-extrabold text-[#0284c7] dark:text-sky-400 font-mono">0%</span>
+                </div>
+
+                <div class="flex items-center gap-6 py-2">
+                    <!-- Boxy Visual Water Gauge -->
+                    <div class="w-16 h-32 water-gauge-box shrink-0 shadow-xs">
+                        <div id="waterWaveFill" class="water-fill-box" style="height: 0%"></div>
+                    </div>
+                    <div class="space-y-1.5 flex-1">
+                        <span data-i18n="water_today" class="text-xs text-slate-400 font-semibold">আজকের সেবন:</span>
+                        <div id="waterGlassCount" class="text-3xl font-extrabold font-mono text-slate-800 dark:text-slate-100">0 / 8</div>
+                        <div id="waterMlText" class="text-xs text-[#0284c7] dark:text-sky-400 font-bold">0 ml</div>
+                        <p data-i18n="water_tip" class="text-[11px] text-slate-400 pt-1 leading-relaxed">ঔষধ সেবনের পূর্বে ও পরে ১ গ্লাস পানি পান ওষুধের সঠিক শোষণ নিশ্চিত করে।</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <button onclick="addWaterGlass()" class="flex-1 min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+                        <span data-i18n="btn_add_glass">+১ গ্লাস (২৫০ মিলি)</span>
+                    </button>
+                    <button onclick="removeWaterGlass()" title="Decrease 1 glass" class="min-h-[44px] px-3.5 rounded-md border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition active:scale-95">
+                        <i data-lucide="minus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tool B: BMI Calculator -->
+            <div class="p-5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xs space-y-4">
+                <div class="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center shrink-0">
+                        <i data-lucide="scale" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 data-i18n="bmi_title" class="font-bold text-sm text-slate-900 dark:text-white">বিএমআই (BMI) ক্যালকুলেটর</h3>
+                        <p data-i18n="bmi_subtitle" class="text-[11px] text-slate-400">শরীরের ওজন ও উচ্চতার অনুপাত যাচাই করুন</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label data-i18n="weight_label" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ওজন (কেজি)</label>
+                        <input type="number" id="bmiWeight" data-i18n-placeholder="weight_placeholder" placeholder="যেমন: 68" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-[#0284c7] focus:border-[#0284c7] outline-none transition">
+                    </div>
+                    <div>
+                        <label data-i18n="height_label" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">উচ্চতা (সেমি)</label>
+                        <input type="number" id="bmiHeight" data-i18n-placeholder="height_placeholder" placeholder="যেমন: 170" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-[#0284c7] focus:border-[#0284c7] outline-none transition">
+                    </div>
+                </div>
+
+                <button id="calcBmiBtn" class="w-full min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs transition shadow-xs flex items-center justify-center gap-1.5 active:scale-95">
+                    <i data-lucide="calculator" class="w-4 h-4"></i>
+                    <span data-i18n="btn_calc_bmi">বিএমআই হিসাব করুন</span>
+                </button>
+
+                <div id="bmiResultBox" class="hidden pt-1">
+                    <!-- Dynamic BMI evaluation injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VIEW 3: DOSE INTAKE HISTORY -->
+        <!-- ============================================================ -->
+        <div id="view-history" class="app-view hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-3">
+                <div>
+                    <h3 data-i18n="history_title" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">ঔষধ সেবনের ইতিহাস ও অ্যাক্টিভিটি লগ</h3>
+                    <p data-i18n="history_subtitle" class="text-xs text-slate-500 dark:text-slate-400">প্রতিটি ডোজ কখন গ্রহণ বা পরিবর্তন করা হয়েছে তার নির্ভরযোগ্য তালিকা।</p>
+                </div>
+                <!-- Controls: Total logs count badge and Clear logs button -->
+                <div class="flex items-center gap-2 flex-wrap shrink-0">
+                    <span id="historyStatsBadge" class="text-xs font-bold px-3 py-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+                        মোট ২৫টি লগ (২০টি/পৃষ্ঠা)
+                    </span>
+                    <button onclick="window.MediCareUI.clearHistoryLogsPrompt()" id="clearHistoryBtn" class="min-h-[40px] px-3.5 py-1.5 text-xs font-bold rounded-md border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center gap-1.5 active:scale-95 shadow-xs" title="Clear history logs">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span data-i18n="clear_history_btn">হিস্ট্রি মুছুন</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Search & Filter section identical to main app -->
+            <div class="bg-white dark:bg-slate-900 rounded-md p-3 sm:p-3.5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="historySearchInput" data-i18n-placeholder="history_search_placeholder" placeholder="ইতিহাস বা ঔষধের নাম দিয়ে খুঁজুন..." class="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 transition">
+                </div>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-md border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <button onclick="window.MediCareUI.setHistoryFilter('all')" id="history-filter-all" data-history-filter="all" data-i18n="filter_all" class="history-filter-tab px-3 py-1.5 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs transition">সবগুলো</button>
+                    <button onclick="window.MediCareUI.setHistoryFilter('taken')" id="history-filter-taken" data-history-filter="taken" data-i18n="filter_taken" class="history-filter-tab px-3 py-1.5 rounded hover:text-slate-900 dark:hover:text-white transition">সেবন করেছি</button>
+                    <button onclick="window.MediCareUI.setHistoryFilter('changes')" id="history-filter-changes" data-history-filter="changes" data-i18n="history_filter_changes" class="history-filter-tab px-3 py-1.5 rounded hover:text-slate-900 dark:hover:text-white transition">পরিবর্তন ও অন্যান্য</button>
+                </div>
+            </div>
+
+            <div id="historyList" class="space-y-3">
+                <!-- Injected dynamically from SQLite history_logs (20 items per page) -->
+            </div>
+
+            <!-- Boxy Pagination Container -->
+            <div id="historyPagination" class="pt-1">
+                <!-- Dynamically generated pagination navigation -->
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VIEW 4: EMERGENCY CONTACTS -->
+        <!-- ============================================================ -->
+        <div id="view-emergency" class="app-view hidden space-y-4">
+            <div class="pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 data-i18n="emergency_title" class="font-bold text-base text-slate-900 dark:text-white">জরুরি হেল্পলাইন ও হটলাইন নম্বর</h3>
+                <p data-i18n="emergency_subtitle" class="text-xs text-slate-500 dark:text-slate-400">যেকোনো স্বাস্থ্য বা মেডিকেল জরুরি প্রয়োজনে সরাসরি কল করুন।</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div class="p-4 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-md bg-rose-600 text-white flex items-center justify-center font-bold shrink-0">
+                            <i data-lucide="phone-call" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div data-i18n="em_national_title" class="font-bold text-sm text-slate-900 dark:text-white">জাতীয় জরুরি সেবা (৯৯৯)</div>
+                            <div data-i18n="em_national_sub" class="text-xs text-slate-500">পুলিশ, অ্যাম্বুলেন্স ও ফায়ার সার্ভিস</div>
+                        </div>
+                    </div>
+                    <a href="tel:999" class="min-h-[44px] px-4 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center justify-center active:scale-95 shadow-xs"><span data-i18n="btn_call">কল করুন</span></a>
+                </div>
+
+                <div class="p-4 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-md bg-[#0284c7] text-white flex items-center justify-center font-bold shrink-0">
+                            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div data-i18n="em_health_title" class="font-bold text-sm text-slate-900 dark:text-white">স্বাস্থ্য বাতায়ন (১৬২৬৩)</div>
+                            <div data-i18n="em_health_sub" class="text-xs text-slate-500">২৪/৭ বিনামূল্যে ডাক্তারের পরামর্শ</div>
+                        </div>
+                    </div>
+                    <a href="tel:16263" class="min-h-[44px] px-4 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs transition flex items-center justify-center active:scale-95 shadow-xs"><span data-i18n="btn_call">কল করুন</span></a>
+                </div>
+
+                <div class="p-4 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-md bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">
+                            <i data-lucide="activity" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div data-i18n="em_iedcr_title" class="font-bold text-sm text-slate-900 dark:text-white">IEDCR হেল্পলাইন (১০৬৫৫)</div>
+                            <div data-i18n="em_iedcr_sub" class="text-xs text-slate-500">রোগ নিয়ন্ত্রণ ও সংক্রামক ব্যাধি</div>
+                        </div>
+                    </div>
+                    <a href="tel:10655" class="min-h-[44px] px-4 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition flex items-center justify-center active:scale-95 shadow-xs"><span data-i18n="btn_call">কল করুন</span></a>
+                </div>
+
+                <div class="p-4 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-md bg-amber-600 text-white flex items-center justify-center font-bold shrink-0">
+                            <i data-lucide="smile" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div data-i18n="em_mental_title" class="font-bold text-sm text-slate-900 dark:text-white">মানসিক স্বাস্থ্য হেল্পলাইন (১৬৮০০)</div>
+                            <div data-i18n="em_mental_sub" class="text-xs text-slate-500">মানসিক স্বাস্থ্য ও কাউন্সেলিং সেবা</div>
+                        </div>
+                    </div>
+                    <a href="tel:16800" class="min-h-[44px] px-4 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center justify-center active:scale-95 shadow-xs"><span data-i18n="btn_call">কল করুন</span></a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar (Thumb-friendly & Boxy) -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-300 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg mobile-bottom-bar">
+        <button onclick="switchTab('schedule')" id="mobile-tab-schedule" class="mobile-nav-btn active min-h-[44px] min-w-[50px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-[#0284c7] dark:text-sky-400 rounded-md">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+            <span data-i18n="tab_schedule">শিডিউল</span>
+        </button>
+        <button onclick="switchTab('tools')" id="mobile-tab-tools" class="mobile-nav-btn min-h-[44px] min-w-[50px] flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 rounded-md">
+            <i data-lucide="droplet" class="w-5 h-5"></i>
+            <span data-i18n="tab_tools">টুলস</span>
+        </button>
+        <!-- Center Boxy Action Button -->
+        <button onclick="openModal()" aria-label="Add Routine" class="w-11 h-11 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white flex items-center justify-center -mt-5 shadow-md shadow-sky-900/30 active:scale-90 transition border border-white/20">
+            <i data-lucide="plus" class="w-6 h-6 stroke-[2.5]"></i>
+        </button>
+        <button onclick="switchTab('history')" id="mobile-tab-history" class="mobile-nav-btn min-h-[44px] min-w-[50px] flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 rounded-md">
+            <i data-lucide="history" class="w-5 h-5"></i>
+            <span data-i18n="tab_history">ইতিহাস</span>
+        </button>
+        <button onclick="switchTab('emergency')" id="mobile-tab-emergency" class="mobile-nav-btn min-h-[44px] min-w-[50px] flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 rounded-md">
+            <i data-lucide="phone-call" class="w-5 h-5"></i>
+            <span data-i18n="tab_emergency">জরুরি</span>
+        </button>
+    </nav>
+
+    <!-- Routine Add / Edit Modal -->
+    <div id="medicineModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-lg w-full p-5 sm:p-6 shadow-2xl relative transition-all my-8 modal-animate border border-slate-300 dark:border-slate-700">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+                <h3 id="routineModalTitle" class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="pill" class="w-5 h-5 text-[#0284c7] dark:text-sky-400"></i>
+                    <span data-i18n="modal_add_title">নতুন ঔষধ / ইনজেকশন যোগ করুন</span>
+                </h3>
+                <button onclick="closeModal()" aria-label="Close" class="min-h-[40px] min-w-[40px] p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="routineForm" onsubmit="handleSaveRoutine(event)" class="space-y-4">
+                <!-- Hidden input for edit tracking -->
+                <input type="hidden" id="editingRoutineId" value="">
+
+                <!-- Name -->
+                <div>
+                    <label data-i18n="field_name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ঔষধ অথবা ইনজেকশনের নাম *</label>
+                    <input type="text" id="medName" required data-i18n-placeholder="placeholder_name" placeholder="যেমন: Napa Extra, Lantus Insulin, Seclo" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                </div>
+
+                <!-- Type Selector -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <label data-i18n="field_type" class="text-xs font-bold text-slate-700 dark:text-slate-300 col-span-full">ধরন নির্বাচন করুন</label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="tablet" checked class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_tablet">ট্যাবলেট</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="injection" class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💉 <span data-i18n="type_injection">ইনজেকশন</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="capsule" class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_capsule">ক্যাপসুল</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="syrup" class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">🧪 <span data-i18n="type_syrup">সিরাপ</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="drop" class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💧 <span data-i18n="type_drop">ড্রপ</span></span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                        <input type="radio" name="medType" value="other" class="accent-[#0284c7]">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">📦 <span data-i18n="type_other">অন্যান্য</span></span>
+                    </label>
+                </div>
+
+                <!-- Dosage & Meal Instruction -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label data-i18n="field_dosage" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ডোজ / পরিমাণ *</label>
+                        <input type="text" id="medDosage" required data-i18n-placeholder="placeholder_dosage" placeholder="১টি / 10 UI / ২ চামচ" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                    </div>
+                    <div>
+                        <label data-i18n="field_meal" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">খাবার নির্দেশনা</label>
+                        <select id="medMeal" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                            <option value="খাবারের আগে (Before Meal)" data-i18n="meal_before">খাবারের আগে (Before Meal)</option>
+                            <option value="খাবারের পরে (After Meal)" data-i18n="meal_after" selected>খাবারের পরে (After Meal)</option>
+                            <option value="খাবারের সাথে (With Meal)" data-i18n="meal_with">খাবারের সাথে (With Meal)</option>
+                            <option value="খালি পেটে (Empty Stomach)" data-i18n="meal_empty">খালি পেটে (Empty Stomach)</option>
+                            <option value="যেকোনো সময়" data-i18n="meal_anytime">যেকোনো সময় (Anytime)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Time Picker & Quick Tags -->
+                <div>
+                    <label data-i18n="field_time" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">সেবনের নির্ধারিত সময় (HH:MM) *</label>
+                    <div class="flex gap-2">
+                        <input type="time" id="medTime" required class="flex-1 px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                    </div>
+                    <!-- Quick time chips -->
+                    <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[11px] text-slate-600 dark:text-slate-400">
+                        <span data-i18n="time_quick" class="text-slate-400 font-medium">সহজে বাছুন:</span>
+                        <button type="button" onclick="setQuickTime('08:00')" class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"><span data-i18n="time_quick_morning">সকাল ৮:০০</span></button>
+                        <button type="button" onclick="setQuickTime('14:00')" class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"><span data-i18n="time_quick_afternoon">দুপুর ২:০০</span></button>
+                        <button type="button" onclick="setQuickTime('21:00')" class="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"><span data-i18n="time_quick_night">রাত ৯:০০</span></button>
+                    </div>
+                </div>
+
+                <!-- Stock / Reminder Notes -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label data-i18n="field_stock" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">স্টক বা বাকি সংখ্যা (ঐচ্ছিক)</label>
+                        <input type="number" id="medStock" min="0" data-i18n-placeholder="placeholder_stock" placeholder="যেমন: ৩০" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                    </div>
+                    <div>
+                        <label data-i18n="field_notes" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">বিশেষ কোনো নোট</label>
+                        <input type="text" id="medNotes" data-i18n-placeholder="placeholder_notes" placeholder="ঠান্ডা জায়গায় রাখুন, ইত্যাদি" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><span data-i18n="btn_cancel">বাতিল</span></button>
+                    <button type="submit" class="min-h-[44px] px-5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs transition active:scale-95"><span data-i18n="btn_save">সংরক্ষণ করুন</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal Dialog -->
+    <div id="deleteConfirmModal" onclick="if(event.target === this) closeDeleteConfirmModal()" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 text-center shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div class="w-12 h-12 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-200 dark:border-rose-800 mx-auto flex items-center justify-center mb-3">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="delete_modal_title" class="text-base font-bold text-slate-900 dark:text-white">রুটিন মুছে ফেলতে চান?</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                <b id="deleteConfirmMedName" class="text-slate-800 dark:text-slate-200"></b> <span id="deleteConfirmSuffix" data-i18n="delete_modal_desc_suffix">এর শিডিউলটি স্থায়ীভাবে মুছে ফেলা হবে। আপনি কি নিশ্চিত?</span>
+            </p>
+            <div class="mt-5 flex items-center gap-2">
+                <button onclick="closeDeleteConfirmModal()" class="flex-1 min-h-[44px] py-2 rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition active:scale-95">
+                    <span data-i18n="btn_cancel">বাতিল</span>
+                </button>
+                <button onclick="executePendingDelete()" class="flex-1 min-h-[44px] py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs active:scale-95">
+                    <span data-i18n="btn_delete_confirm">মুছে ফেলুন</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear History Confirmation Modal Dialog -->
+    <div id="clearHistoryConfirmModal" onclick="if(event.target === this) closeClearHistoryModal()" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 text-center shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div class="w-12 h-12 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-200 dark:border-rose-800 mx-auto flex items-center justify-center mb-3">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 data-i18n="clear_history_modal_title" class="text-base font-bold text-slate-900 dark:text-white">সেবনের ইতিহাস মুছে ফেলতে চান?</h3>
+            <p data-i18n="clear_history_modal_desc" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                আপনার সকল অতীত সেবনের রেকর্ড এবং অ্যাক্টিভিটি লগ স্থায়ীভাবে মুছে যাবে। এটি আর পুনরুদ্ধার করা যাবে না। আপনি কি নিশ্চিত?
+            </p>
+            <div class="mt-5 flex items-center gap-2">
+                <button onclick="closeClearHistoryModal()" class="flex-1 min-h-[44px] py-2 rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition active:scale-95">
+                    <span data-i18n="btn_cancel">বাতিল</span>
+                </button>
+                <button onclick="executeClearHistoryLogs()" class="flex-1 min-h-[44px] py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs active:scale-95">
+                    <span data-i18n="btn_delete_confirm">মুছে ফেলুন</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Alarm Notification Modal -->
+    <div id="alarmAlertModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-6 text-center shadow-2xl relative border-2 border-amber-500 modal-animate">
+            <div class="w-16 h-16 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 mx-auto flex items-center justify-center alarm-ring mb-3">
+                <i data-lucide="bell-ring" class="w-8 h-8"></i>
+            </div>
+            <span data-i18n="alarm_title" class="inline-block px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px] font-extrabold rounded uppercase tracking-wider mb-2 border border-amber-300">ঔষধ সেবনের সময় হয়েছে!</span>
+            <h3 id="alarmMedName" class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">Napa Extra</h3>
+            <p id="alarmMedDetails" class="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-1">1 tab • After Meal</p>
+            <p id="alarmMedTime" class="text-xs font-bold text-[#0284c7] dark:text-sky-400 bg-sky-50 dark:bg-sky-950/60 py-1 px-3 rounded border border-sky-200 dark:border-sky-800 w-fit mx-auto mt-2 font-mono">10:30 PM</p>
+
+            <div class="mt-5 flex flex-col gap-2">
+                <button id="alarmTakeBtn" class="w-full min-h-[44px] py-3 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-sm shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
+                    <span data-i18n="alarm_btn_take">খেয়েছি / সেবন করেছি</span>
+                </button>
+                <button onclick="dismissAlarm()" class="w-full min-h-[44px] py-2 rounded-md border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition active:scale-95">
+                    <span data-i18n="alarm_btn_snooze">পরে মনে করিয়ে দিন (Snooze)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Application Modular Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/sqlite-db.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
