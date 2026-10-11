@@ -1,84 +1,84 @@
-# 🩺 মেডিকেয়ার - ক্লিনিক্যাল বক্সি হেলথ কেয়ার পোর্টাল (MediCare Clinical Suite)
+# 🩺 MediCare - Clinical Boxy Healthcare Portal (MediCare Clinical Suite)
 
-একটি পেশাদার ও নির্ভুল ক্লিনিক্যাল ঔষধ ও ইনজেকশন সেবা সূচি, রিমাইন্ডার এবং হেলথ কেয়ার ওয়েব অ্যাপ্লিকেশন। এটি কাঠামোগত বক্সি (Boxy) আর্কিটেকচার, দ্বিভাষিক লোকালাইজেশন (Bangla ও English), বাংলাদেশ অটো-ডিটেকশন, বিশুদ্ধ **অ্যানেক বাংলা (Anek Bangla)** ও **Plus Jakarta Sans** টাইপোগ্রাফি, ক্লিনিক্যাল নেভি কালার প্যালেট এবং ব্যাকগ্রাউন্ড মেডিকেল ওয়াটারমার্ক লোগো দ্বারা সজ্জিত।
-
----
-
-## ✨ প্রধান বৈশিষ্ট্য ও আর্কিটেকচার
-
-1. **🌐 স্বয়ংক্রিয় দ্বিভাষিক লোকালাইজেশন (Bangla & English Localization)**:
-   - **বাংলাদেশ অটো-ডিটেকশন**: ব্যবহারকারী যদি বাংলাদেশ থেকে প্রবেশ করেন (`Asia/Dhaka` টাইমজোন বা `bn`/`BD` লোকাল), তবে স্বয়ংক্রিয়ভাবে **বাংলা (Bangla)** ডিফল্ট ভাষা হিসেবে সক্রিয় হয়।
-   - **আন্তর্জাতিক ভিজিটর**: বাংলাদেশ ছাড়া পৃথিবীর যেকোনো দেশ বা অঞ্চলের জন্য স্বয়ংক্রিয়ভাবে আন্তর্জাতিক মানসম্পন্ন **ইংরেজি (English)** ডিফল্ট ভাষা হিসেবে নির্বাচিত হয়।
-   - **ম্যানুয়াল ভাষা পরিবর্তন (`বাং / EN`)**: হেডারে থাকা ভাষা সুইচ বাটনের মাধ্যমে যেকোনো সময় তাৎক্ষণিকভাবে বাংলা এবং ইংরেজির মধ্যে অদলবদল করা যায়।
-   - **ব্যবহারকারীর পছন্দ সংরক্ষণ**: একবার ভাষা পরিবর্তন করলে ব্রাউজারের `localStorage`-এ তা স্থায়ীভাবে সংরক্ষিত থাকে।
-   - **পূর্ণাঙ্গ অনুবাদ কভারেজ**: হেডার, হিরো ব্যানার, প্রগ্রেস বার, ঔষধের কার্ড, স্ট্যাটাস ব্যাজ, খাবার নির্দেশনা, পানি পানের ট্র্যাকার, বিএমআই ক্যালকুলেটর, সেবনের হিস্ট্রি লগ, জরুরি হেল্পলাইন, মোডাল ডায়ালগ এবং অ্যালার্ট টোস্ট—সবকিছুই উভভাষায় সমর্থিত।
-
-2. **📦 কাঠামোগত বক্সি ডিজাইন (Structured Boxy Clinical Architecture)**:
-   - অতিরিক্ত বাবল বা পিল-আকৃতির পরিবর্তে সুশৃঙ্খল জ্যামিতিক রেকটাঙ্গুলার কার্ড (`border-radius: 6px`)।
-   - ক্লিনিক্যাল নেভি (`#0f2744`), সার্জিক্যাল ব্লু (`#0284c7`), এমেরাল্ড গ্রিন (`#059669`) এবং হাই-কনট্রাস্ট ক্রিস্প বর্ডার (`#cbd5e1`)।
-   - বাস্তব হাসপাতালের সফটওয়্যার ও ক্লিনিক্যাল পোর্টালের মতো পরিচ্ছন্ন ও বিশ্বস্ত তথ্য উপস্থাপনা।
-
-3. **🏥 ড্যাশবোর্ডে ব্যাকগ্রাউন্ড মেডিকেল ওয়াটারমার্ক লোগো**:
-   - হিরো ড্যাশবোর্ডের ব্যাকগ্রাউন্ডে সূক্ষ্ম অপাসিটিতে এমবেডেড ইন্সটিটিউশনাল মেডিকেল ক্রস ও পালস রিদম ওয়াটারমার্ক (`.dashboard-watermark`)।
-
-4. **🔤 প্রিমিয়াম ক্লিনিক্যাল টাইপোগ্রাফি (Anek Bangla & Plus Jakarta Sans)**:
-   - বাংলা ভাষার জন্য বিশুদ্ধ **Anek Bangla (অ্যানেক বাংলা)** ফন্ট।
-   - ইংরেজি ভাষার জন্য আধুনিক মেডিকেল স্ট্যান্ডার্ড **Plus Jakarta Sans**।
-   - সংখ্যা, লাইভ ক্লক ও মেজারমেন্টের জন্য সুনির্দিষ্ট মনস্পেস **JetBrains Mono**।
-
-5. **📱 মোবাইল ও এক-হাতে ব্যবহারের সর্বোচ্চ সুবিধা (Mobile-Optimized UX)**:
-   - প্রতিটি ইন্টারঅ্যাক্টিভ বোতামের উচ্চতা কমপক্ষে ৪৪ পিক্সেল (`min-h-[44px]`), যা যেকোনো স্মার্টফোনে বৃদ্ধাঙ্গুল দিয়ে অনায়াসে স্পর্শযোগ্য।
-   - বক্সি মোবাইল বটম নেভিগেশন বার এবং তাৎক্ষণিক এক্সেস অ্যাকশন বাটন।
-   - স্ক্রিনের নিচের অংশ ঢেকে না যাওয়ার জন্য ডায়নামিক সেফ-প্যাডিং (`pb-24 sm:pb-8`)।
-
-6. **💾 ব্যাকগ্রাউন্ড SQLite WebAssembly ডাটাবেজ ও পেজিনেশন (20 Per Page)**:
-   - সম্পূর্ণ অফলাইন ও ব্রাউজার লোকাল মেমোরিতে নির্ভরযোগ্য ডাটা সংরক্ষণ।
-   - **মেইন অ্যাপের অনুরূপ কার্ড ও টাইপোগ্রাফি আর্কিটেকচার**: ইতিহাস ও অ্যাক্টিভিটি লগের প্রতিটি কার্ড এখন মূল ঔষধ শিডিউলের মতোই ১০০% একই **Anek Bangla** ফন্ট, বক্সি কার্ড সাইজ (`med-card`), ১১x১১ আইকন বক্স, অ্যাকশন ব্যাজ ও টাইমস্ট্যাম্প ধারণ করে।
-   - **সার্চ ও ফিল্টার বার**: মূল অ্যাপের মতো সার্চ ইনপুট এবং ফিল্টার পিল (`সবগুলো`, `সেবন করেছি`, `পরিবর্তন ও অন্যান্য`)।
-   - **২০টি করে সুনির্দিষ্ট পেজিনেশন**: দ্রুত পেজ নেভিগেশন (`পূর্ববর্তী`, `১`, `২`, `৩` ..., `পরবর্তী`), মোট লগ সংখ্যা ট্র্যাকিং এবং ১-ক্লিকে ক্লিনিক্যাল হিস্ট্রি ক্লিয়ার করার সুবিধা।
-
-7. **🛠️ সমন্বিত ক্লিনিক্যাল টুলস**:
-   - **পানি পানের ট্র্যাকার (Water Tracker)**: বক্সি গেজসহ দৈনন্দিন লক্ষ্য পূরণ।
-   - **বিএমআই ক্যালকুলেটর (BMI)**: শারীরিক উচ্চতা ও ওজনের অনুপাত বিশ্লেষণ এবং স্বাস্থ্য পরামর্শ।
-   - **প্রেসক্রিপশন প্রিন্ট (Print Chart)**: ১-ক্লিকে ক্লিনিক্যাল চার্ট প্রিন্ট।
-   - **জরুরি হটলাইন (Emergency Numbers)**: ৯৯৯, ১৬২৬৩, ১০৬৫৫ সরাসরি ডায়াল।
+A professional, high-precision clinical medicine and injection schedule, reminder, and healthcare web application. Built with a structured boxy architecture, bilingual localization (Bangla & English) with Bangladesh auto-detection, pure **Anek Bangla** and **Plus Jakarta Sans** typography, a clinical navy color palette, and an institutional background medical watermark logo.
 
 ---
 
-## 📁 প্রজেক্ট ফোল্ডার স্ট্রাকচার
+## ✨ Key Features & Architecture
+
+1. **🌐 Automatic Bilingual Localization (Bangla & English Localization)**:
+   - **Bangladesh Auto-Detection**: If a user visits from Bangladesh (`Asia/Dhaka` timezone or `bn`/`BD` locale), **Bangla** is automatically activated as the default language.
+   - **International Visitors**: For visitors from any other country or region worldwide, standard **English** is automatically selected as the default language.
+   - **Manual Language Switcher (`বাং / EN`)**: Easily switch between Bangla and English at any time using the header language toggle button.
+   - **User Preference Persistence**: Once changed, the language preference is permanently saved in the browser's `localStorage`.
+   - **Comprehensive Translation Coverage**: Complete bilingual support across headers, hero banner, progress bars, medicine cards, status badges, meal instructions, water intake tracker, BMI calculator, dose history logs, emergency helplines, modal dialogs, and alert toasts.
+
+2. **📦 Structured Boxy Design (Clinical Architecture)**:
+   - Clean, geometric rectangular cards (`border-radius: 6px`) instead of excessive bubble or pill shapes.
+   - Clinical Navy (`#0f2744`), Surgical Blue (`#0284c7`), Emerald Green (`#059669`), and high-contrast crisp borders (`#cbd5e1`).
+   - Clean, trustworthy information hierarchy modeled after enterprise hospital software and clinical portals.
+
+3. **🏥 Background Medical Watermark Logo on Dashboard**:
+   - Subtle opacity institutional medical cross and pulse rhythm watermark embedded into the hero dashboard background (`.dashboard-watermark`).
+
+4. **🔤 Premium Clinical Typography (Anek Bangla & Plus Jakarta Sans)**:
+   - Pure **Anek Bangla** font for Bengali text.
+   - Modern medical standard **Plus Jakarta Sans** for English text.
+   - High-precision monospaced **JetBrains Mono** for numerical values, live clock, and measurements.
+
+5. **📱 Mobile-Optimized UX & One-Handed Usability**:
+   - Minimum 44px touch targets (`min-h-[44px]`) on every interactive button for effortless one-handed thumb navigation on smartphones.
+   - Boxy mobile bottom navigation bar with instant access action buttons.
+   - Dynamic safe padding (`pb-24 sm:pb-8`) to prevent UI occlusion on mobile viewports.
+
+6. **💾 Background SQLite WebAssembly Database & Pagination (20 Per Page)**:
+   - Reliable, completely offline data storage within the browser's local sandbox memory.
+   - **Unified Card & Typography Architecture**: History and activity log cards share the identical typography, boxy card sizing (`med-card`), 11x11 icon boxes, action badges, and timestamps as the main medicine schedule.
+   - **Search & Filter Bar**: Real-time search query input and filter pills (`All`, `Taken`, `Changes & Others`).
+   - **Clean 20-Item Pagination**: Swift page navigation (`Previous`, `1`, `2`, `3` ..., `Next`), total log count tracking, and 1-click clinical history clearing.
+
+7. **🛠️ Integrated Clinical Tools**:
+   - **Water Intake Tracker**: Boxy gauge display with daily goal completion tracking.
+   - **BMI Calculator**: Body Mass Index evaluation with personalized health insights.
+   - **Prescription Print Chart**: 1-click formatted clinical chart printing.
+   - **Emergency Hotlines**: Direct calling for emergency services (999, 16263, 10655).
+
+---
+
+## 📁 Project Folder Structure
 
 ```text
 medi/
-├── index.html                                  # প্রধান বক্সি ক্লিনিক্যাল ওয়েব অ্যাপ্লিকেশন
-├── medicine_injection_reminder_web_app.html    # ব্যাকওয়ার্ড কম্প্যাটিবল ফাইল (সিঙ্ক করা)
-├── README.md                                   # প্রজেক্ট বিস্তারিত ডকুমেন্টেশন
+├── index.html                                  # Primary boxy clinical web application
+├── medicine_injection_reminder_web_app.html    # Backward compatible file (synchronized)
+├── README.md                                   # Comprehensive project documentation
 ├── css/
-│   └── style.css                               # বক্সি টোকেন, ওয়াটারমার্ক, অ্যানিমেশন ও ক্লিনিক্যাল স্টাইল
+│   └── style.css                               # Boxy tokens, watermark, animations & clinical styles
 └── js/
-    ├── i18n.js                                 # বাংলা ও ইংরেজি দ্বিভাষিক লোকালাইজেশন ও বিডি ডিটেকশন ইঞ্জিন
-    ├── config.js                               # স্কিমা ও ডিফল্ট কনফিগারেশন
-    ├── sqlite-db.js                            # ব্যাকগ্রাউন্ড WebAssembly SQLite ইঞ্জিন
-    ├── storage.js                              # CRUD ও স্টেট ম্যানেজমেন্ট
-    ├── tools.js                                # বিএমআই, ওয়াটার ট্র্যাকার ও প্রেসক্রিপশন প্রিন্টার
-    ├── audio.js                                # ওয়েব অডিও সিন্থেসাইজার অ্যালার্ম ও চাইম
-    ├── ui.js                                   # বক্সি ভিউ রেন্ডারার, মোডাল ও নোটিফিকেশন
-    └── app.js                                  # লাইফসাইকেল, সার্চ, লাইভ ক্লক ও অ্যালার্ট স্ক্যানার
+    ├── i18n.js                                 # Bangla & English localization and BD detection engine
+    ├── config.js                               # Schema and default configurations
+    ├── sqlite-db.js                            # Background WebAssembly SQLite engine
+    ├── storage.js                              # CRUD and state management
+    ├── tools.js                                # BMI, water tracker & prescription printer
+    ├── audio.js                                # Web Audio synthesizer alarms & chimes
+    ├── ui.js                                   # Boxy view renderer, modals & notifications
+    └── app.js                                  # Lifecycle, search, live clock & alert scanner
 ```
 
 ---
 
-## 🌍 লোকালাইজেশন কিভাবে কাজ করে (Localization Logic)
+## 🌍 How Localization Works (Localization Logic)
 
-1. **অটো ডিটেকশন অ্যালগরিদম**:
-   - ব্যবহারকারীর ব্রাউজারের টাইমজোন চেক করা হয়: `Intl.DateTimeFormat().resolvedOptions().timeZone` যদি `'Asia/Dhaka'` হয়, তবে ডিফল্ট ভাষা হবে `'bn'` (Bangla)।
-   - ব্রাউজারের ভাষা বা রিজিয়ন (`navigator.languages` / `navigator.language`) যদি `'bn'`, `'bn-BD'` বা `BD` ধারণ করে, তবে ডিফল্ট ভাষা হবে `'bn'`.
-   - উপরোক্ত শর্ত পূরণ না হলে (যেমন: US, UK, Canada, India, Middle East বা অন্যান্য দেশ), স্বয়ংক্রিয়ভাবে ডিফল্ট ভাষা নির্ধারিত হয় `'en'` (English)।
+1. **Auto-Detection Algorithm**:
+   - Inspects the user's browser timezone: if `Intl.DateTimeFormat().resolvedOptions().timeZone` is `'Asia/Dhaka'`, default language is set to `'bn'` (Bangla).
+   - If browser language or region (`navigator.languages` / `navigator.language`) contains `'bn'`, `'bn-BD'`, or `'BD'`, default language is set to `'bn'`.
+   - If neither condition matches (e.g., visitors from US, UK, Canada, India, Middle East, etc.), default language automatically resolves to `'en'` (English).
 
-2. **ব্যবহারকারীর অগ্রাধিকার (User Override)**:
-   - ব্যবহারকারী হেডারের `বাং / EN` বাটনে ক্লিক করে ভাষা পরিবর্তন করলে তা `localStorage`-এ `medicare_language` কী-তে সংরক্ষিত হয় এবং পরবর্তীতে এই সংরক্ষিত নির্বাচনই সর্বোচ্চ অগ্রাধিকার পায়।
+2. **User Preference Override**:
+   - When a user clicks the `বাং / EN` toggle button in the header, their selection is stored in `localStorage` under the `medicare_language` key, taking top priority on future visits.
 
 ---
 
-## 🚀 ব্যবহার প্রণালী
+## 🚀 Getting Started
 
-যেকোনো মোবাইল বা ডেস্কটপ ব্রাউজারে সরাসরি **`index.html`** ফাইলটি ওপেন করলেই অ্যাপ্লিকেশনটি সক্রিয় হয়ে যাবে। কোনো সার্ভার বা ইন্টারনেট সংযোগ ছাড়াও সম্পূর্ণ অফলাইনে এটি কাজ করে।
+Simply open **`index.html`** directly in any modern mobile or desktop web browser. The application runs entirely offline without requiring any server, build step, or active internet connection.
