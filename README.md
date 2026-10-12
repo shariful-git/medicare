@@ -48,6 +48,13 @@ A professional, high-precision clinical medicine and injection schedule, reminde
    - **Customizable Info**: Pre-fills existing medicine properties (name, type, dosage, meal instruction, scheduled time, stock, notes) while allowing full customization before saving.
    - **Non-Destructive Scheduling**: Cloned routines are saved as independent entries without altering the source routine, logged automatically in the SQLite history database with distinct badges.
 
+9. **🔒 Native SQLite File (`medicare.sqlite`) & Authentication**:
+   - **Node.js Express Backend (`server.js`)**: Serves direct REST APIs connected to a native `medicare.sqlite` file on disk.
+   - **User Accounts & Multi-User Profiles**: Secure password hashing with salt, separate routines and history per user.
+   - **1-Click Demo Login**: Pre-seeded demo account (`demo` / `123456`) for rapid clinical testing.
+   - **Direct `.sqlite` Database Download**: Download the live `.sqlite` database file with 1-click directly from the user profile menu.
+   - **Mobile-First Responsive Layout**: All login modals, header dropdowns, and schedule views fit seamlessly on mobile devices (320px+).
+
 ---
 
 ## 📁 Project Folder Structure
@@ -55,20 +62,34 @@ A professional, high-precision clinical medicine and injection schedule, reminde
 ```text
 medi/
 ├── index.html                                  # Primary boxy clinical web application
-├── medicine_injection_reminder_web_app.html    # Backward compatible file (synchronized)
+├── package.json                                # Node.js package definition & scripts
+├── server.js                                   # Native SQLite backend server & REST API
+├── medicare.sqlite                             # Genuine SQLite relational database file
 ├── README.md                                   # Comprehensive project documentation
 ├── css/
 │   └── style.css                               # Boxy tokens, watermark, animations & clinical styles
 └── js/
+    ├── auth.js                                 # User authentication & profile manager
     ├── i18n.js                                 # Bangla & English localization and BD detection engine
     ├── config.js                               # Schema and default configurations
-    ├── sqlite-db.js                            # Background WebAssembly SQLite engine
+    ├── sqlite-db.js                            # WebAssembly SQLite engine
     ├── storage.js                              # CRUD and state management
     ├── tools.js                                # BMI, water tracker & prescription printer
     ├── audio.js                                # Web Audio synthesizer alarms & chimes
     ├── ui.js                                   # Boxy view renderer, modals & notifications
     └── app.js                                  # Lifecycle, search, live clock & alert scanner
 ```
+
+---
+
+## 🚀 How to Run the Backend Server
+
+```bash
+# Start the server (default port 3000)
+node server.js
+```
+Then open `http://localhost:3000` in your desktop or mobile browser.
+*(Or double-click `index.html` to run immediately in standalone mode with full SQLite multi-user support!)*
 
 ---
 

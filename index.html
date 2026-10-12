@@ -84,11 +84,17 @@
                             <span class="status-indicator"></span>
                             <span data-i18n="active_status">সক্রিয়</span>
                         </span>
+                        <span class="hidden lg:inline-block text-slate-300 dark:text-slate-700">•</span>
+                        <!-- SQLite DB status indicator -->
+                        <span id="dbStatusBadge" class="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/70 border border-sky-200 dark:border-sky-800 text-[11px] font-semibold">
+                            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                            <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold font-mono">.SQLite DB</span>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- Controls (Clock, Language Switcher, Theme, Audio, Alert) -->
+            <!-- Controls (Clock, Language Switcher, Theme, Audio, Alert, User Auth) -->
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <div class="text-right hidden md:block pr-2.5 border-r border-slate-300 dark:border-slate-800">
                     <span id="liveClock" class="font-mono text-sm font-bold text-[#0f2744] dark:text-sky-400 tracking-wider">00:00:00</span>
@@ -112,11 +118,45 @@
                 </button>
 
                 <!-- Push Notification Permission Button -->
-                <button id="notiPermBtn" class="min-h-[40px] px-3 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                <button id="notiPermBtn" class="hidden sm:flex min-h-[40px] px-2.5 text-xs font-bold rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition items-center gap-1.5 active:scale-95 shadow-xs">
                     <i data-lucide="bell" class="w-3.5 h-3.5 text-[#0284c7] dark:text-sky-400"></i>
                     <span id="notiPermLabel" data-i18n="alert_btn">অ্যালার্ট</span>
                 </button>
-            </div>
+
+                <!-- User Profile / Auth Button -->
+                <div class="relative">
+                    <button onclick="window.MediCareAuth.openAuthModal()" id="userAuthBtn" class="min-h-[40px] px-3 text-xs font-bold rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        <span data-i18n="btn_login">লগইন</span>
+                    </button>
+
+                    <!-- Logged-in Profile Badge & Dropdown -->
+                    <div id="userProfileBox" class="hidden relative">
+                        <button onclick="window.MediCareAuth.toggleUserMenu()" id="userProfileBtn" class="min-h-[40px] px-2.5 text-xs font-bold rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                            <div class="w-5 h-5 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] uppercase font-mono font-bold" id="userAvatarChar">U</div>
+                            <span id="userDisplayName" class="max-w-[70px] sm:max-w-[110px] truncate">User</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 opacity-70"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div id="userProfileDropdown" class="hidden absolute right-0 mt-2 w-56 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xl py-1 z-50 modal-animate">
+                            <div class="px-3.5 py-2.5 border-b border-slate-200 dark:border-slate-800">
+                                <p class="text-xs font-bold text-slate-900 dark:text-white truncate" id="dropdownUserName">User</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono" id="dropdownUserHandle">@user</p>
+                            </div>
+                            <div class="py-1">
+                                <button onclick="window.MediCareAuth.downloadSqliteFile()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition">
+                                    <i data-lucide="database" class="w-4 h-4 text-sky-500"></i>
+                                    <span data-i18n="btn_download_db">.sqlite ফাইল ডাউনলোড</span>
+                                </button>
+                                <button onclick="window.MediCareAuth.logout()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                                    <span data-i18n="btn_logout">লগআউট</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
     </header>
 
@@ -622,6 +662,86 @@
         </div>
     </div>
 
+    <!-- User Authentication Modal Dialog (Login & Register) -->
+    <div id="authModal" onclick="if(event.target === this) window.MediCareAuth.closeAuthModal()" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 sm:p-6 shadow-2xl relative transition-all my-8 modal-animate border border-slate-300 dark:border-slate-700">
+            <!-- Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-md bg-[#0f2744] dark:bg-[#0284c7] text-white flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 id="authModalTitleText" class="font-extrabold text-base text-slate-900 dark:text-white" data-i18n="auth_modal_login_title">মেডিকেয়ারে লগইন</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">ব্যক্তিগত ও নিরাপদ ঔষধ ট্র্যাকিং</p>
+                    </div>
+                </div>
+                <button onclick="window.MediCareAuth.closeAuthModal()" aria-label="Close" class="min-h-[40px] min-w-[40px] p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Tab Switcher (Login / Register) -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-md mb-4 border border-slate-200 dark:border-slate-700">
+                <button type="button" id="authTabLogin" onclick="window.MediCareAuth.switchAuthTab('login')" class="flex-1 py-2 text-xs font-bold rounded bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs transition" data-i18n="auth_tab_login">লগইন করুন</button>
+                <button type="button" id="authTabRegister" onclick="window.MediCareAuth.switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 transition" data-i18n="auth_tab_register">নতুন অ্যাকাউন্ট</button>
+            </div>
+
+            <!-- Error message container -->
+            <div id="authErrorMessage" class="hidden p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs mb-3"></div>
+
+            <!-- Auth Form -->
+            <form id="authForm" onsubmit="window.MediCareAuth.handleAuthSubmit(event)" class="space-y-3.5">
+                <input type="hidden" id="authCurrentMode" value="login">
+
+                <!-- Full Name (Only for Register) -->
+                <div id="authFullNameGroup" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" data-i18n="auth_field_fullname">আপনার পূর্ণ নাম</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="authFullName" data-i18n-placeholder="auth_placeholder_fullname" placeholder="যেমন: ডা. শরিফুল ইসলাম" class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                    </div>
+                </div>
+
+                <!-- Username / ID -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" data-i18n="auth_field_username">ইউজারনেম বা আইডি</label>
+                    <div class="relative">
+                        <i data-lucide="at-sign" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="authUsername" required data-i18n-placeholder="auth_placeholder_username" placeholder="যেমন: shariful বা demo" class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" data-i18n="auth_field_password">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="password" id="authPassword" required data-i18n-placeholder="auth_placeholder_password" placeholder="পাসওয়ার্ড লিখুন..." class="w-full pl-9 pr-9 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                        <button type="button" onclick="window.MediCareAuth.togglePasswordVisibility()" aria-label="Toggle Password" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <i data-lucide="eye" id="authPassEyeIcon" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full min-h-[44px] mt-2 py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span id="authSubmitBtnText" data-i18n="btn_login_submit">লগইন করুন</span>
+                </button>
+
+                <!-- Divider & 1-Click Quick Demo Login -->
+                <div class="pt-2 text-center border-t border-slate-200 dark:border-slate-800">
+                    <p class="text-[11px] text-slate-400 mb-2">অথবা দ্রুত পরীক্ষা করার জন্য:</p>
+                    <button type="button" onclick="window.MediCareAuth.quickDemoLogin()" class="w-full min-h-[40px] py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1.5 active:scale-95">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i>
+                        <span data-i18n="btn_demo_login">১-ক্লিকে ডেমো লগইন (demo / 123456)</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Active Alarm Notification Modal -->
     <div id="alarmAlertModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-6 text-center shadow-2xl relative border-2 border-amber-500 modal-animate">
@@ -653,6 +773,7 @@
     <script src="js/config.js"></script>
     <script src="js/sqlite-db.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/ui.js"></script>

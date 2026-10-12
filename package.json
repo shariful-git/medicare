@@ -1,0 +1,24 @@
+{
+  "name": "medicare-clinical-suite",
+  "version": "2.0.0",
+  "description": "Clinical Medicine & Injection Schedule Portal with Native SQLite Database and Authentication",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "medicare",
+    "sqlite",
+    "healthcare",
+    "medicine-schedule",
+    "authentication"
+  ],
+  "author": "MediCare Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.7"
+  }
+}

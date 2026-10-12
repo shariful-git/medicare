@@ -336,10 +336,17 @@ window.addEventListener('keydown', (e) => {
             window.MediCareUI.closeClearHistoryModal();
             window.MediCareUI.dismissAlarmModal();
         }
+        if (window.MediCareAuth) {
+            window.MediCareAuth.closeAuthModal();
+        }
     }
 });
 
 // Bootstrap on DOM ready
 window.addEventListener('DOMContentLoaded', () => {
+    if (window.MediCareAuth) {
+        window.MediCareAuth.init();
+    }
     window.MediCareApp.init();
 });
+

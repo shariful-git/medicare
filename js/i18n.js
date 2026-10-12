@@ -193,7 +193,29 @@ window.MediCareI18n = (function () {
             toast_cloned: 'ঔষধ শিডিউল সফলভাবে ক্লোন ও সংরক্ষণ করা হয়েছে!',
             toast_dark_on: 'ডার্ক মোড সক্রিয় হয়েছে',
             toast_light_on: 'লাইট মোড সক্রিয় হয়েছে',
-            toast_lang_switched: 'ভাষা পরিবর্তন: বাংলা'
+            toast_lang_switched: 'ভাষা পরিবর্তন: বাংলা',
+
+            // Authentication & Database
+            btn_login: 'লগইন',
+            btn_logout: 'লগআউট',
+            auth_modal_login_title: 'মেডিকেয়ারে লগইন',
+            auth_modal_register_title: 'নতুন অ্যাকাউন্ট তৈরি',
+            auth_tab_login: 'লগইন করুন',
+            auth_tab_register: 'নতুন অ্যাকাউন্ট',
+            auth_field_username: 'ইউজারনেম বা আইডি',
+            auth_placeholder_username: 'যেমন: shariful বা demo',
+            auth_field_fullname: 'আপনার পূর্ণ নাম',
+            auth_placeholder_fullname: 'যেমন: ডা. শরিফুল ইসলাম',
+            auth_field_password: 'পাসওয়ার্ড',
+            auth_placeholder_password: 'পাসওয়ার্ড লিখুন...',
+            btn_login_submit: 'লগইন করুন',
+            btn_register_submit: 'অ্যাকাউন্ট তৈরি করুন',
+            btn_demo_login: '১-ক্লিকে ডেমো লগইন',
+            btn_download_db: '.sqlite ফাইল ডাউনলোড',
+            toast_login_success: 'স্বাগতম! আপনি সফলভাবে লগইন করেছেন।',
+            toast_register_success: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
+            toast_demo_login: 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!',
+            toast_logged_out: 'আপনি সফলভাবে লগআউট হয়েছেন।'
         },
 
         en: {
@@ -381,7 +403,29 @@ window.MediCareI18n = (function () {
             toast_cloned: 'Medicine schedule cloned and saved successfully!',
             toast_dark_on: 'Dark mode enabled',
             toast_light_on: 'Light mode enabled',
-            toast_lang_switched: 'Language switched: English'
+            toast_lang_switched: 'Language switched: English',
+
+            // Authentication & Database
+            btn_login: 'Sign In',
+            btn_logout: 'Sign Out',
+            auth_modal_login_title: 'Sign In to MediCare',
+            auth_modal_register_title: 'Create an Account',
+            auth_tab_login: 'Sign In',
+            auth_tab_register: 'Register',
+            auth_field_username: 'Username or ID',
+            auth_placeholder_username: 'e.g. shariful or demo',
+            auth_field_fullname: 'Full Name',
+            auth_placeholder_fullname: 'e.g. Dr. Shariful Islam',
+            auth_field_password: 'Password',
+            auth_placeholder_password: 'Enter password...',
+            btn_login_submit: 'Sign In',
+            btn_register_submit: 'Create Account',
+            btn_demo_login: '1-Click Demo Login',
+            btn_download_db: 'Download .sqlite File',
+            toast_login_success: 'Welcome! You have signed in successfully.',
+            toast_register_success: 'Account created successfully!',
+            toast_demo_login: 'Entered Demo Account successfully!',
+            toast_logged_out: 'Signed out successfully.'
         }
     };
 
