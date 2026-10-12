@@ -221,7 +221,8 @@ window.MediCareI18n = (function () {
             toast_register_success: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
             toast_demo_login: 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!',
             toast_logged_out: 'আপনি সফলভাবে লগআউট হয়েছেন।',
-            toast_db_downloaded: 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!'
+            toast_db_downloaded: 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!',
+            btn_demo_login: '১-ক্লিকে ডেমো লগইন (demo / 123456)'
         },
 
         en: {
@@ -436,7 +437,8 @@ window.MediCareI18n = (function () {
             toast_register_success: 'Account created successfully!',
             toast_demo_login: 'Entered Demo Account successfully!',
             toast_logged_out: 'Signed out successfully.',
-            toast_db_downloaded: 'medicare.sqlite file downloaded successfully!'
+            toast_db_downloaded: 'medicare.sqlite file downloaded successfully!',
+            btn_demo_login: '1-Click Demo Login (demo / 123456)'
         }
     };
 
