@@ -43,6 +43,11 @@ A professional, high-precision clinical medicine and injection schedule, reminde
    - **Prescription Print Chart**: 1-click formatted clinical chart printing.
    - **Emergency Hotlines**: Direct calling for emergency services (999, 16263, 10655).
 
+8. **📋 Medicine Schedule Cloning & Modification**:
+   - **1-Click Routine Duplication**: Directly clone any existing medicine schedule item using the dedicated clone button.
+   - **Customizable Info**: Pre-fills existing medicine properties (name, type, dosage, meal instruction, scheduled time, stock, notes) while allowing full customization before saving.
+   - **Non-Destructive Scheduling**: Cloned routines are saved as independent entries without altering the source routine, logged automatically in the SQLite history database with distinct badges.
+
 ---
 
 ## 📁 Project Folder Structure

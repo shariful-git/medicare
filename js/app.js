@@ -140,6 +140,7 @@ window.MediCareApp = (function () {
     function handleSaveRoutine(event) {
         event.preventDefault();
         const editingId = document.getElementById('editingRoutineId')?.value;
+        const isCloning = document.getElementById('isCloningRoutine')?.value === 'true';
         const name = document.getElementById('medName').value.trim();
         const typeEl = document.querySelector('input[name="medType"]:checked');
         const type = typeEl ? typeEl.value : 'tablet';
@@ -151,7 +152,7 @@ window.MediCareApp = (function () {
 
         if (!name || !dosage || !time) return;
 
-        if (editingId) {
+        if (editingId && !isCloning) {
             window.MediCareStore.updateRoutine(editingId, {
                 name,
                 type,
@@ -180,10 +181,12 @@ window.MediCareApp = (function () {
                 createdAt: new Date().toISOString()
             };
 
-            window.MediCareStore.addRoutine(newRoutine);
+            window.MediCareStore.addRoutine(newRoutine, isCloning);
             window.MediCareUI.closeModal();
             window.MediCareUI.renderRoutines();
-            const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_added') : 'নতুন রুটিন সফলভাবে যুক্ত হয়েছে!';
+            const msg = isCloning
+                ? (window.MediCareI18n ? window.MediCareI18n.t('toast_cloned') : 'ঔষধ শিডিউল সফলভাবে ক্লোন ও সংরক্ষণ করা হয়েছে!')
+                : (window.MediCareI18n ? window.MediCareI18n.t('toast_added') : 'নতুন রুটিন সফলভাবে যুক্ত হয়েছে!');
             window.MediCareUI.showToast(msg, 'success');
         }
     }

@@ -109,11 +109,11 @@ window.MediCareStore = (function () {
         currentTab = tab;
     }
 
-    function addRoutine(routine) {
+    function addRoutine(routine, isCloned = false) {
         routines.unshift(routine);
         save();
         if (window.MediCareSQLite) {
-            window.MediCareSQLite.logAction(routine.id, routine.name, 'action_added');
+            window.MediCareSQLite.logAction(routine.id, routine.name, isCloned ? 'action_cloned' : 'action_added');
         }
     }
 

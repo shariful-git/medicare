@@ -58,6 +58,7 @@ window.MediCareI18n = (function () {
             btn_taken: 'খেয়েছি',
             btn_undo: 'আনডু',
             btn_edit: 'সম্পাদনা করুন',
+            btn_clone: 'ক্লোন করুন',
             btn_delete: 'ডিলিট করুন',
 
             // Time of Day Badges
@@ -125,6 +126,7 @@ window.MediCareI18n = (function () {
             log_action_taken: 'ডোজ গ্রহণ করা হয়েছে',
             log_action_undo: 'ডোজ আনডু করা হয়েছে',
             log_action_added: 'নতুন রুটিন যুক্ত করা হয়েছে',
+            log_action_cloned: 'শিডিউল ক্লোন করে যুক্ত করা হয়েছে',
             log_action_updated: 'রুটিন তথ্য আপডেট করা হয়েছে',
             log_action_deleted: 'রুটিন মুছে ফেলা হয়েছে',
 
@@ -144,6 +146,10 @@ window.MediCareI18n = (function () {
             // Routine Add/Edit Modal
             modal_add_title: 'নতুন ঔষধ / ইনজেকশন যোগ করুন',
             modal_edit_title: 'ঔষধের তথ্য সম্পাদনা করুন',
+            modal_clone_title: 'ঔষধ শিডিউল ক্লোন করুন',
+            modal_clone_banner_title: 'ঔষধ শিডিউল ক্লোন মোড',
+            modal_clone_notice: 'পূর্ববর্তী তথ্যের ওপর ভিত্তি করে নতুন শিডিউল তৈরি হচ্ছে। আপনি চাইলে সময়, ডোজ বা যেকোনো গুরুত্বপূর্ণ তথ্য পরিবর্তন করে সংরক্ষণ করতে পারেন।',
+            btn_clone_save: 'ক্লোন সংরক্ষণ করুন',
             field_name: 'ঔষধ অথবা ইনজেকশনের নাম *',
             placeholder_name: 'যেমন: Napa Extra, Lantus Insulin, Seclo',
             field_type: 'ধরন নির্বাচন করুন',
@@ -184,6 +190,7 @@ window.MediCareI18n = (function () {
             toast_deleted: 'রুটিনটি সফলভাবে মুছে ফেলা হয়েছে',
             toast_updated: 'ঔষধের তথ্য সফলভাবে আপডেট হয়েছে!',
             toast_added: 'নতুন রুটিন সফলভাবে যুক্ত হয়েছে!',
+            toast_cloned: 'ঔষধ শিডিউল সফলভাবে ক্লোন ও সংরক্ষণ করা হয়েছে!',
             toast_dark_on: 'ডার্ক মোড সক্রিয় হয়েছে',
             toast_light_on: 'লাইট মোড সক্রিয় হয়েছে',
             toast_lang_switched: 'ভাষা পরিবর্তন: বাংলা'
@@ -239,6 +246,7 @@ window.MediCareI18n = (function () {
             btn_taken: 'Taken',
             btn_undo: 'Undo',
             btn_edit: 'Edit',
+            btn_clone: 'Clone',
             btn_delete: 'Delete',
 
             // Time of Day Badges
@@ -306,6 +314,7 @@ window.MediCareI18n = (function () {
             log_action_taken: 'Dose administered',
             log_action_undo: 'Dose was undone',
             log_action_added: 'New routine added',
+            log_action_cloned: 'Routine cloned & scheduled',
             log_action_updated: 'Routine updated',
             log_action_deleted: 'Routine removed',
 
@@ -325,6 +334,10 @@ window.MediCareI18n = (function () {
             // Routine Add/Edit Modal
             modal_add_title: 'Add New Medicine / Injection',
             modal_edit_title: 'Edit Medicine Routine',
+            modal_clone_title: 'Clone Medicine Schedule',
+            modal_clone_banner_title: 'Medicine Schedule Clone Mode',
+            modal_clone_notice: 'Creating a duplicate routine based on this schedule. Modify time, dosage, or any details before saving.',
+            btn_clone_save: 'Save Cloned Routine',
             field_name: 'Medicine / Injection Name *',
             placeholder_name: 'e.g. Napa Extra, Lantus Insulin, Seclo',
             field_type: 'Select Type',
@@ -365,6 +378,7 @@ window.MediCareI18n = (function () {
             toast_deleted: 'Routine successfully deleted',
             toast_updated: 'Routine updated successfully!',
             toast_added: 'New routine added successfully!',
+            toast_cloned: 'Medicine schedule cloned and saved successfully!',
             toast_dark_on: 'Dark mode enabled',
             toast_light_on: 'Light mode enabled',
             toast_lang_switched: 'Language switched: English'

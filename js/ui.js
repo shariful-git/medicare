@@ -218,6 +218,7 @@ window.MediCareUI = (function () {
         const btnTaken = t('btn_taken', 'খেয়েছি');
         const btnUndo = t('btn_undo', 'আনডু');
         const btnEdit = t('btn_edit', 'সম্পাদনা করুন');
+        const btnClone = t('btn_clone', 'ক্লোন করুন');
         const btnDelete = t('btn_delete', 'ডিলিট করুন');
 
         filtered.forEach(item => {
@@ -278,10 +279,13 @@ window.MediCareUI = (function () {
                             ${btnUndo}
                         </button>
                     `}
-                    <button onclick="window.MediCareUI.openModal('${item.id}')" title="${btnEdit}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-[#0284c7] hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 transition flex items-center justify-center active:scale-95">
+                    <button onclick="window.MediCareUI.openModal('${item.id}')" title="${btnEdit}" aria-label="${btnEdit}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-[#0284c7] hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 transition flex items-center justify-center active:scale-95">
                         <i data-lucide="edit-3" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="window.MediCareUI.confirmDelete('${item.id}', '${escapeHtml(item.name)}')" title="${btnDelete}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center justify-center active:scale-95">
+                    <button onclick="window.MediCareUI.cloneRoutine('${item.id}')" title="${btnClone}" aria-label="${btnClone}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-teal-600 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition flex items-center justify-center active:scale-95">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="window.MediCareUI.confirmDelete('${item.id}', '${escapeHtml(item.name)}')" title="${btnDelete}" aria-label="${btnDelete}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center justify-center active:scale-95">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -327,6 +331,14 @@ window.MediCareUI = (function () {
                 icon: 'plus-circle',
                 badgeClass: 'bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-[#0284c7] dark:text-sky-300',
                 textClass: 'text-[#0284c7] dark:text-sky-300'
+            };
+        }
+        if (act === 'action_cloned' || act.includes('ক্লোন') || act.includes('cloned')) {
+            return {
+                label: t('log_action_cloned', 'শিডিউল ক্লোন করে যুক্ত করা হয়েছে'),
+                icon: 'copy',
+                badgeClass: 'bg-teal-50 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300',
+                textClass: 'text-teal-700 dark:text-teal-300'
             };
         }
         if (act === 'action_updated' || act.includes('আপডেট') || act.includes('updated')) {
@@ -605,20 +617,68 @@ window.MediCareUI = (function () {
     }
 
     // ==========================================
-    // ROUTINE ADD / EDIT MODAL
+    // ROUTINE ADD / EDIT / CLONE MODAL
     // ==========================================
-    function openModal(editId = null) {
+    function openModal(editId = null, isClone = false) {
         const form = document.getElementById('routineForm');
         const modalTitle = document.getElementById('routineModalTitle');
+        const modalTitleText = document.getElementById('routineModalTitleText');
+        const modalIcon = document.getElementById('routineModalIcon');
         const editingIdInput = document.getElementById('editingRoutineId');
+        const isCloningInput = document.getElementById('isCloningRoutine');
+        const cloneNoticeBanner = document.getElementById('cloneNoticeBanner');
+        const submitBtnText = document.getElementById('routineModalSubmitText');
 
         if (form) form.reset();
+
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
 
         if (editId) {
             const routine = window.MediCareStore.getRoutineById(editId);
             if (routine) {
-                if (modalTitle) modalTitle.textContent = window.MediCareI18n ? window.MediCareI18n.t('modal_edit_title') : 'ঔষধের তথ্য সম্পাদনা করুন';
-                if (editingIdInput) editingIdInput.value = editId;
+                if (isClone) {
+                    // CLONE ROUTINE MODE
+                    if (isCloningInput) isCloningInput.value = 'true';
+                    if (editingIdInput) editingIdInput.value = '';
+                    if (cloneNoticeBanner) cloneNoticeBanner.classList.remove('hidden');
+
+                    const cloneTitle = t('modal_clone_title', 'ঔষধ শিডিউল ক্লোন করুন');
+                    if (modalTitleText) {
+                        modalTitleText.textContent = cloneTitle;
+                    } else if (modalTitle) {
+                        modalTitle.textContent = cloneTitle;
+                    }
+
+                    if (modalIcon) {
+                        modalIcon.setAttribute('data-lucide', 'copy');
+                        modalIcon.className = 'w-5 h-5 text-teal-600 dark:text-teal-400';
+                    }
+
+                    if (submitBtnText) {
+                        submitBtnText.textContent = t('btn_clone_save', 'ক্লোন সংরক্ষণ করুন');
+                    }
+                } else {
+                    // EDIT EXISTING ROUTINE MODE
+                    if (isCloningInput) isCloningInput.value = 'false';
+                    if (editingIdInput) editingIdInput.value = editId;
+                    if (cloneNoticeBanner) cloneNoticeBanner.classList.add('hidden');
+
+                    const editTitle = t('modal_edit_title', 'ঔষধের তথ্য সম্পাদনা করুন');
+                    if (modalTitleText) {
+                        modalTitleText.textContent = editTitle;
+                    } else if (modalTitle) {
+                        modalTitle.textContent = editTitle;
+                    }
+
+                    if (modalIcon) {
+                        modalIcon.setAttribute('data-lucide', 'edit-3');
+                        modalIcon.className = 'w-5 h-5 text-[#0284c7] dark:text-sky-400';
+                    }
+
+                    if (submitBtnText) {
+                        submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
+                    }
+                }
 
                 document.getElementById('medName').value = routine.name || '';
                 document.getElementById('medDosage').value = routine.dosage || '';
@@ -631,14 +691,34 @@ window.MediCareUI = (function () {
                 if (typeRadio) typeRadio.checked = true;
             }
         } else {
-            if (modalTitle) modalTitle.textContent = window.MediCareI18n ? window.MediCareI18n.t('modal_add_title') : 'নতুন ঔষধ / ইনজেকশন যোগ করুন';
+            // ADD NEW ROUTINE MODE
+            if (isCloningInput) isCloningInput.value = 'false';
             if (editingIdInput) editingIdInput.value = '';
+            if (cloneNoticeBanner) cloneNoticeBanner.classList.add('hidden');
+
+            const addTitle = t('modal_add_title', 'নতুন ঔষধ / ইনজেকশন যোগ করুন');
+            if (modalTitleText) {
+                modalTitleText.textContent = addTitle;
+            } else if (modalTitle) {
+                modalTitle.textContent = addTitle;
+            }
+
+            if (modalIcon) {
+                modalIcon.setAttribute('data-lucide', 'pill');
+                modalIcon.className = 'w-5 h-5 text-[#0284c7] dark:text-sky-400';
+            }
+
+            if (submitBtnText) {
+                submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
+            }
 
             const now = new Date();
             const nextHour = String((now.getHours() + 1) % 24).padStart(2, '0') + ':00';
             const timeInput = document.getElementById('medTime');
             if (timeInput) timeInput.value = nextHour;
         }
+
+        if (window.lucide) window.lucide.createIcons();
 
         const modal = document.getElementById('medicineModal');
         if (modal) modal.classList.remove('hidden');
@@ -647,6 +727,14 @@ window.MediCareUI = (function () {
     function closeModal() {
         const modal = document.getElementById('medicineModal');
         if (modal) modal.classList.add('hidden');
+        const isCloningInput = document.getElementById('isCloningRoutine');
+        if (isCloningInput) isCloningInput.value = 'false';
+        const cloneNoticeBanner = document.getElementById('cloneNoticeBanner');
+        if (cloneNoticeBanner) cloneNoticeBanner.classList.add('hidden');
+    }
+
+    function cloneRoutine(id) {
+        openModal(id, true);
     }
 
     // ==========================================
@@ -749,6 +837,7 @@ window.MediCareUI = (function () {
         initHistorySearch,
         openModal,
         closeModal,
+        cloneRoutine,
         confirmDelete,
         closeDeleteConfirmModal,
         executePendingDelete,
@@ -762,6 +851,7 @@ window.MediCareUI = (function () {
 // Global alias bindings
 window.openModal = window.MediCareUI.openModal;
 window.closeModal = window.MediCareUI.closeModal;
+window.cloneRoutine = window.MediCareUI.cloneRoutine;
 window.setFilter = window.MediCareUI.setFilter;
 window.setQuickTime = window.MediCareUI.setQuickTime;
 window.dismissAlarm = window.MediCareUI.dismissAlarmModal;
