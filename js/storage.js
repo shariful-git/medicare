@@ -1,56 +1,133 @@
 /**
  * MediCare - Unified Storage & State Manager
- * Coordinates LocalStorage and SQLite WebAssembly Database.
+ * Coordinates LocalStorage and SQLite WebAssembly Database with Strict Multi-User Isolation.
  */
 
 window.MediCareStore = (function () {
-    const STORAGE_KEY = window.MediCareConfig ? window.MediCareConfig.STORAGE_KEY : 'medicare_routines_v2';
-    const HYDRATION_KEY = window.MediCareConfig ? window.MediCareConfig.HYDRATION_KEY : 'medicare_hydration_v1';
+    const BASE_STORAGE_KEY = window.MediCareConfig ? window.MediCareConfig.STORAGE_KEY : 'medicare_routines_v2';
+    const BASE_HYDRATION_KEY = window.MediCareConfig ? window.MediCareConfig.HYDRATION_KEY : 'medicare_hydration_v1';
     
     let routines = [];
     let activeFilter = 'all';
     let searchQuery = '';
     let currentTab = 'schedule'; // 'schedule' | 'tools' | 'history' | 'emergency'
 
+    /**
+     * Resolves the active user ID (defaults to 'guest')
+     */
+    function getActiveUserId() {
+        if (window.MediCareAuth && typeof window.MediCareAuth.getCurrentUser === 'function') {
+            const user = window.MediCareAuth.getCurrentUser();
+            if (user && user.id) return user.id;
+        }
+        return 'guest';
+    }
+
+    /**
+     * Returns user-isolated storage key
+     */
+    function getUserKey(baseKey, userId) {
+        const uid = userId || getActiveUserId();
+        return `${baseKey}_${uid}`;
+    }
+
+    /**
+     * Filters out old legacy sample mock IDs so user always gets clean data
+     */
+    function filterOutMockData(list) {
+        if (!Array.isArray(list)) return [];
+        return list.filter(r => !['demo-1', 'demo-2', 'demo-3', 'med-demo-1', 'med-demo-2', 'med-demo-3'].includes(r.id));
+    }
+
+    /**
+     * Initializes Storage and loads active user's data
+     */
     async function init() {
-        // Try initializing SQLite
+        // 1. Initialize SQLite WebAssembly
         if (window.MediCareSQLite) {
             await window.MediCareSQLite.init();
         }
 
-        // Check SQLite routines first, else fallback to LocalStorage
-        let loadedFromSqlite = null;
+        // 2. Load routines strictly for the active user
+        await loadUserRoutines();
+    }
+
+    /**
+     * Loads routines specifically for current active user
+     */
+    async function loadUserRoutines() {
+        const uid = getActiveUserId();
+        let loaded = null;
+
+        // Try SQLite first
         if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
-            loadedFromSqlite = window.MediCareSQLite.loadRoutines();
+            loaded = window.MediCareSQLite.loadRoutines(uid);
         }
 
-        if (loadedFromSqlite && loadedFromSqlite.length > 0) {
-            routines = loadedFromSqlite;
-        } else {
-            const stored = localStorage.getItem(STORAGE_KEY);
+        // Fallback to user-scoped LocalStorage
+        if (!loaded || loaded.length === 0) {
+            const userStoreKey = getUserKey(BASE_STORAGE_KEY, uid);
+            const stored = localStorage.getItem(userStoreKey);
             if (stored) {
                 try {
-                    routines = JSON.parse(stored);
+                    loaded = JSON.parse(stored);
                 } catch (e) {
-                    routines = [];
+                    loaded = [];
                 }
             } else {
-                const defaults = window.MediCareConfig ? window.MediCareConfig.DEFAULT_ROUTINES : [];
-                routines = JSON.parse(JSON.stringify(defaults));
+                // If brand new user, check if this is guest and old global key exists
+                if (uid === 'guest') {
+                    const legacyGlobal = localStorage.getItem(BASE_STORAGE_KEY);
+                    if (legacyGlobal) {
+                        try {
+                            loaded = JSON.parse(legacyGlobal);
+                        } catch (e) {
+                            loaded = [];
+                        }
+                    }
+                }
             }
         }
 
+        routines = filterOutMockData(loaded || []);
         refreshRoutineStatuses();
         save();
     }
 
-    function save() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
-        if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
-            window.MediCareSQLite.syncRoutines(routines);
+    /**
+     * Called when user logs in, registers, switches accounts, or logs out
+     */
+    async function onUserChanged() {
+        activeFilter = 'all';
+        searchQuery = '';
+        await loadUserRoutines();
+
+        if (window.MediCareUI) {
+            window.MediCareUI.renderRoutines();
+            window.MediCareUI.renderHistoryView();
+        }
+        if (window.MediCareTools) {
+            window.MediCareTools.renderHydrationUI();
         }
     }
 
+    /**
+     * Saves active user's routines to both SQLite and localStorage
+     */
+    function save() {
+        const uid = getActiveUserId();
+        // Save to user-scoped localStorage
+        localStorage.setItem(getUserKey(BASE_STORAGE_KEY, uid), JSON.stringify(routines));
+
+        // Save to SQLite
+        if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
+            window.MediCareSQLite.syncRoutines(routines, uid);
+        }
+    }
+
+    /**
+     * Refreshes daily taken statuses based on current date
+     */
     function refreshRoutineStatuses() {
         const todayStr = new Date().toDateString();
         routines.forEach(r => {
@@ -110,10 +187,12 @@ window.MediCareStore = (function () {
     }
 
     function addRoutine(routine, isCloned = false) {
+        const uid = getActiveUserId();
+        routine.user_id = uid;
         routines.unshift(routine);
         save();
         if (window.MediCareSQLite) {
-            window.MediCareSQLite.logAction(routine.id, routine.name, isCloned ? 'action_cloned' : 'action_added');
+            window.MediCareSQLite.logAction(routine.id, routine.name, isCloned ? 'action_cloned' : 'action_added', null, null, uid);
         }
     }
 
@@ -127,7 +206,7 @@ window.MediCareStore = (function () {
             routines[index] = { ...routines[index], ...updatedData };
             save();
             if (window.MediCareSQLite) {
-                window.MediCareSQLite.logAction(id, routines[index].name, 'action_updated');
+                window.MediCareSQLite.logAction(id, routines[index].name, 'action_updated', null, null, getActiveUserId());
             }
             return routines[index];
         }
@@ -144,7 +223,7 @@ window.MediCareStore = (function () {
             }
             save();
             if (window.MediCareSQLite) {
-                window.MediCareSQLite.logAction(item.id, item.name, 'action_taken');
+                window.MediCareSQLite.logAction(item.id, item.name, 'action_taken', null, null, getActiveUserId());
             }
         }
         return item;
@@ -157,7 +236,7 @@ window.MediCareStore = (function () {
             item.lastTakenDate = '';
             save();
             if (window.MediCareSQLite) {
-                window.MediCareSQLite.logAction(item.id, item.name, 'action_undo');
+                window.MediCareSQLite.logAction(item.id, item.name, 'action_undo', null, null, getActiveUserId());
             }
         }
         return item;
@@ -169,7 +248,7 @@ window.MediCareStore = (function () {
         routines = routines.filter(r => r.id !== id);
         save();
         if (window.MediCareSQLite) {
-            window.MediCareSQLite.logAction(id, name, 'action_deleted');
+            window.MediCareSQLite.logAction(id, name, 'action_deleted', null, null, getActiveUserId());
         }
     }
 
@@ -181,10 +260,11 @@ window.MediCareStore = (function () {
         return { total, taken, pending, percentage };
     }
 
-    // Hydration Tracker state
+    // Hydration Tracker state isolated per user
     function getHydration() {
+        const uid = getActiveUserId();
         const todayKey = new Date().toISOString().slice(0, 10);
-        const raw = localStorage.getItem(HYDRATION_KEY);
+        const raw = localStorage.getItem(getUserKey(BASE_HYDRATION_KEY, uid));
         let data = {};
         if (raw) {
             try { data = JSON.parse(raw); } catch (e) { data = {}; }
@@ -196,31 +276,81 @@ window.MediCareStore = (function () {
     }
 
     function updateHydration(change) {
+        const uid = getActiveUserId();
         const { todayKey, fullData } = getHydration();
         if (!fullData[todayKey]) fullData[todayKey] = { glasses: 0, target: 8 };
         let newGlasses = (fullData[todayKey].glasses || 0) + change;
         if (newGlasses < 0) newGlasses = 0;
         if (newGlasses > 20) newGlasses = 20;
         fullData[todayKey].glasses = newGlasses;
-        localStorage.setItem(HYDRATION_KEY, JSON.stringify(fullData));
+        localStorage.setItem(getUserKey(BASE_HYDRATION_KEY, uid), JSON.stringify(fullData));
         return fullData[todayKey];
     }
 
     function getHistoryLogsPaged(page = 1, pageSize = 20) {
         if (window.MediCareSQLite) {
-            return window.MediCareSQLite.getHistoryLogsPaged(page, pageSize);
+            return window.MediCareSQLite.getHistoryLogsPaged(page, pageSize, getActiveUserId());
         }
         return { logs: [], total: 0, page: 1, pageSize, totalPages: 1 };
     }
 
     function clearHistoryLogs() {
         if (window.MediCareSQLite) {
-            window.MediCareSQLite.clearHistoryLogs();
+            window.MediCareSQLite.clearHistoryLogs(getActiveUserId());
         }
+    }
+
+    /**
+     * Resets database completely to a fresh, clean slate
+     */
+    function resetToFreshDatabase(skipConfirm = false) {
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+        if (!skipConfirm) {
+            const confirmed = window.confirm(t('confirm_fresh_db', 'আপনি কি নিশ্চিত যে ডাটাবেজ সম্পূর্ণ ফ্রেশ ও রিসেট করতে চান? আপনার বর্তমান সমস্ত ঔষধ শিডিউল এবং হিস্ট্রি লগ মুছে যাবে।'));
+            if (!confirmed) return false;
+        }
+
+        // 1. Reset SQLite
+        if (window.MediCareSQLite) {
+            window.MediCareSQLite.resetDatabase();
+        }
+
+        // 2. Wipe LocalStorage entries related to routines and history
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (
+                key.startsWith('medicare_routines') ||
+                key.startsWith('medicare_history_logs') ||
+                key.startsWith('medicare_hydration') ||
+                key === 'medicare_sqlite_bin_v1'
+            )) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        // 3. Clear in-memory routines
+        routines = [];
+        activeFilter = 'all';
+        searchQuery = '';
+
+        // 4. Update UI
+        if (window.MediCareUI) {
+            window.MediCareUI.renderRoutines();
+            window.MediCareUI.renderHistoryView();
+            window.MediCareUI.showToast(t('toast_fresh_db_success', 'ডাটাবেজ সফলভাবে ফ্রেশ ও পরিষ্কার করা হয়েছে!'), 'success');
+        }
+        if (window.MediCareTools) {
+            window.MediCareTools.renderHydrationUI();
+        }
+
+        return true;
     }
 
     return {
         init,
+        onUserChanged,
         getRoutines,
         getFilteredRoutines,
         getActiveFilter,
@@ -240,6 +370,7 @@ window.MediCareStore = (function () {
         getHistoryLogsPaged,
         clearHistoryLogs,
         refreshRoutineStatuses,
-        save
+        save,
+        resetToFreshDatabase
     };
 })();

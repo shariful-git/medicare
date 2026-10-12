@@ -210,12 +210,18 @@ window.MediCareI18n = (function () {
             auth_placeholder_password: 'পাসওয়ার্ড লিখুন...',
             btn_login_submit: 'লগইন করুন',
             btn_register_submit: 'অ্যাকাউন্ট তৈরি করুন',
-            btn_demo_login: '১-ক্লিকে ডেমো লগইন',
             btn_download_db: '.sqlite ফাইল ডাউনলোড',
+            btn_fresh_db: 'ডাটাবেজ ফ্রেশ / রিসেট',
+            btn_fresh_db_action: 'সম্পূর্ণ ফ্রেশ ও রিসেট করুন',
+            db_management_title: 'ডাটাবেজ ও ব্যাকআপ নিয়ন্ত্রণ (.SQLite)',
+            db_management_desc: 'লোকাল SQLite ডাটাবেজ ব্যাকআপ, এক্সপোর্ট ও সম্পূর্ণ ফ্রেশ রিসেট সুবিধা।',
+            confirm_fresh_db: 'আপনি কি নিশ্চিত যে ডাটাবেজ সম্পূর্ণ ফ্রেশ ও রিসেট করতে চান? আপনার বর্তমান সমস্ত ঔষধ শিডিউল এবং হিস্ট্রি লগ মুছে যাবে।',
+            toast_fresh_db_success: 'ডাটাবেজ সফলভাবে ফ্রেশ ও পরিষ্কার করা হয়েছে!',
             toast_login_success: 'স্বাগতম! আপনি সফলভাবে লগইন করেছেন।',
             toast_register_success: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
             toast_demo_login: 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!',
-            toast_logged_out: 'আপনি সফলভাবে লগআউট হয়েছেন।'
+            toast_logged_out: 'আপনি সফলভাবে লগআউট হয়েছেন।',
+            toast_db_downloaded: 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!'
         },
 
         en: {
@@ -419,13 +425,18 @@ window.MediCareI18n = (function () {
             auth_field_password: 'Password',
             auth_placeholder_password: 'Enter password...',
             btn_login_submit: 'Sign In',
-            btn_register_submit: 'Create Account',
-            btn_demo_login: '1-Click Demo Login',
             btn_download_db: 'Download .sqlite File',
+            btn_fresh_db: 'Fresh / Reset DB',
+            btn_fresh_db_action: 'Reset to Clean Fresh Database',
+            db_management_title: 'Database & Backup Control (.SQLite)',
+            db_management_desc: 'Manage local SQLite database backups, download .sqlite file or start fresh.',
+            confirm_fresh_db: 'Are you sure you want to reset to a completely fresh database? All your routines and history logs will be cleared.',
+            toast_fresh_db_success: 'Database successfully reset to a clean, fresh state!',
             toast_login_success: 'Welcome! You have signed in successfully.',
             toast_register_success: 'Account created successfully!',
             toast_demo_login: 'Entered Demo Account successfully!',
-            toast_logged_out: 'Signed out successfully.'
+            toast_logged_out: 'Signed out successfully.',
+            toast_db_downloaded: 'medicare.sqlite file downloaded successfully!'
         }
     };
 

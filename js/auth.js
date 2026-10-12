@@ -352,7 +352,9 @@ window.MediCareAuth = (function () {
     }
 
     function reloadUserData() {
-        if (window.MediCareUI) {
+        if (window.MediCareStore && typeof window.MediCareStore.onUserChanged === 'function') {
+            window.MediCareStore.onUserChanged();
+        } else if (window.MediCareUI) {
             window.MediCareUI.renderRoutines();
             window.MediCareUI.renderHistoryView();
         }
@@ -362,33 +364,10 @@ window.MediCareAuth = (function () {
     function downloadSqliteFile() {
         if (isServerMode) {
             window.location.href = `${API_BASE}/api/database/download`;
-        } else if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
-            try {
-                const res = window.MediCareSQLite.runQuery('SELECT 1;');
-                // Export SQLite binary
-                const base64 = localStorage.getItem('medicare_sqlite_bin_v1');
-                if (base64) {
-                    const binary = atob(base64);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) {
-                        bytes[i] = binary.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: 'application/x-sqlite3' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'medicare.sqlite';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showSuccessToast('medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!');
-                } else {
-                    showSuccessToast('SQLite ফাইল প্রস্তুত হচ্ছে...', 'info');
-                }
-            } catch (e) {
-                console.error(e);
-            }
+        } else if (window.MediCareSQLite && typeof window.MediCareSQLite.exportDatabaseFile === 'function') {
+            window.MediCareSQLite.exportDatabaseFile();
+            const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+            showSuccessToast(t('toast_db_downloaded', 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!'));
         }
     }
 

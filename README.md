@@ -51,9 +51,14 @@ A professional, high-precision clinical medicine and injection schedule, reminde
 9. **🔒 Native SQLite File (`medicare.sqlite`) & Authentication**:
    - **Node.js Express Backend (`server.js`)**: Serves direct REST APIs connected to a native `medicare.sqlite` file on disk.
    - **User Accounts & Multi-User Profiles**: Secure password hashing with salt, separate routines and history per user.
-   - **1-Click Demo Login**: Pre-seeded demo account (`demo` / `123456`) for rapid clinical testing.
+   - **1-Click Demo Login**: Pre-configured demo account (`demo` / `123456`) for rapid clinical testing.
    - **Direct `.sqlite` Database Download**: Download the live `.sqlite` database file with 1-click directly from the user profile menu.
    - **Mobile-First Responsive Layout**: All login modals, header dropdowns, and schedule views fit seamlessly on mobile devices (320px+).
+
+10. **👤 Multi-User Data Isolation & 1-Click Fresh Database Reset**:
+    - **Strict Per-User Data Isolation**: When User A or User B logs in, registers, or stays in guest mode, each user gets their own completely separate routines, intake history logs, stats, and hydration counter.
+    - **Fresh Database State**: Starts completely clean with zero fake demo routines and zero sample history logs.
+    - **1-Click Fresh Database Reset (`ডাটাবেজ ফ্রেশ / রিসেট`)**: Accessible directly from both the User Profile Dropdown and the Tools tab. Completely wipes legacy records and restores a fresh slate.
 
 ---
 

@@ -149,6 +149,10 @@
                                     <i data-lucide="database" class="w-4 h-4 text-sky-500"></i>
                                     <span data-i18n="btn_download_db">.sqlite ফাইল ডাউনলোড</span>
                                 </button>
+                                <button onclick="window.MediCareStore.resetToFreshDatabase()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2 transition">
+                                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                    <span data-i18n="btn_fresh_db">ডাটাবেজ ফ্রেশ / রিসেট</span>
+                                </button>
                                 <button onclick="window.MediCareAuth.logout()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition">
                                     <i data-lucide="log-out" class="w-4 h-4"></i>
                                     <span data-i18n="btn_logout">লগআউট</span>
@@ -364,6 +368,38 @@
 
                 <div id="bmiResultBox" class="hidden pt-1">
                     <!-- Dynamic BMI evaluation injected here -->
+                </div>
+            </div>
+
+            <!-- Tool C: SQLite Database Management & Fresh Reset -->
+            <div class="p-5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xs space-y-4 sm:col-span-2">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 rounded-md bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
+                            <i data-lucide="database" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 data-i18n="db_management_title" class="font-bold text-sm text-slate-900 dark:text-white">ডাটাবেজ ও ব্যাকআপ নিয়ন্ত্রণ (.SQLite)</h3>
+                            <p data-i18n="db_management_desc" class="text-[11px] text-slate-400">লোকাল SQLite ডাটাবেজ ব্যাকআপ, এক্সপোর্ট ও সম্পূর্ণ ফ্রেশ রিসেট সুবিধা।</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 font-mono">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            SQLite Local DB
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <button onclick="window.MediCareAuth.downloadSqliteFile()" class="min-h-[44px] py-2.5 px-4 rounded-md border border-slate-300 dark:border-slate-700 hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-slate-800 dark:text-slate-200 font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 active:scale-95">
+                        <i data-lucide="download" class="w-4 h-4 text-[#0284c7]"></i>
+                        <span data-i18n="btn_download_db">.sqlite ফাইল ডাউনলোড</span>
+                    </button>
+                    <button onclick="window.MediCareStore.resetToFreshDatabase()" class="min-h-[44px] py-2.5 px-4 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 active:scale-95">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-600"></i>
+                        <span data-i18n="btn_fresh_db_action">সম্পূর্ণ ফ্রেশ ও রিসেট করুন</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -153,18 +153,7 @@ function initTablesSqlite3() {
                     'INSERT INTO users (id, username, full_name, password_hash, salt, created_at) VALUES (?, ?, ?, ?, ?, ?)',
                     [userId, 'demo', 'ডা. শরিফুল ইসলাম (Dr. Shariful)', hash, salt, new Date().toISOString()]
                 );
-
-                // Add sample routines for demo user
-                const sampleRoutines = [
-                    ['med-demo-1', userId, 'ইনসুলিন (Lantus)', 'injection', '10 UI', 'খাবারের ৩০ মিনিট আগে', '21:30', 5, 'ফ্রিজের নিচের দরজায় রাখুন', 0, '', new Date().toISOString()],
-                    ['med-demo-2', userId, 'Napa Extend (৬৬৫ মিলিগ্রাম)', 'tablet', '১ টি', 'খাবারের পরে (After Meal)', '08:30', 14, 'জ্বর ও শরীর ব্যথার জন্য', 1, new Date().toDateString(), new Date().toISOString()],
-                    ['med-demo-3', userId, 'Seclo 20mg (ওমিপ্রাজল)', 'capsule', '১ টি', 'খালি পেটে (Empty Stomach)', '07:30', 20, 'সকালে ঘুম থেকে উঠে সেব্য', 0, '', new Date().toISOString()]
-                ];
-
-                const stmt = db.prepare('INSERT INTO routines (id, user_id, name, type, dosage, meal, time, stock, notes, taken_today, last_taken_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                sampleRoutines.forEach(r => stmt.run(r));
-                stmt.finalize();
-                console.log('Default Demo user created: username: demo | password: 123456');
+                console.log('Default Demo user created (Fresh zero routines): username: demo | password: 123456');
             }
         });
     });
@@ -485,6 +474,29 @@ app.delete('/api/routines/:id', authMiddleware, (req, res) => {
         fallbackMemoryDb.routines = fallbackMemoryDb.routines.filter(r => !(r.id === id && r.user_id === req.userId));
         saveFallbackDb();
         res.json({ success: true });
+    }
+});
+
+// Reset / Fresh Database for active user
+app.post('/api/database/reset', authMiddleware, (req, res) => {
+    if (dbDriver === 'sqlite3') {
+        db.run('DELETE FROM routines WHERE user_id = ?', [req.userId]);
+        db.run('DELETE FROM history_logs WHERE user_id = ?', [req.userId]);
+        db.run('DELETE FROM hydration WHERE user_id = ?', [req.userId], (err) => {
+            if (err) return res.status(500).json({ success: false, error: err.message });
+            res.json({ success: true, message: 'User database reset successfully.' });
+        });
+    } else if (dbDriver === 'node:sqlite') {
+        db.prepare('DELETE FROM routines WHERE user_id = ?').run(req.userId);
+        db.prepare('DELETE FROM history_logs WHERE user_id = ?').run(req.userId);
+        db.prepare('DELETE FROM hydration WHERE user_id = ?').run(req.userId);
+        res.json({ success: true, message: 'User database reset successfully.' });
+    } else {
+        fallbackMemoryDb.routines = fallbackMemoryDb.routines.filter(r => r.user_id !== req.userId);
+        fallbackMemoryDb.history_logs = fallbackMemoryDb.history_logs.filter(l => l.user_id !== req.userId);
+        fallbackMemoryDb.hydration = fallbackMemoryDb.hydration.filter(h => h.user_id !== req.userId);
+        saveFallbackDb();
+        res.json({ success: true, message: 'User database reset successfully.' });
     }
 });
 

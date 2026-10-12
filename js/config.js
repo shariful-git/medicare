@@ -7,10 +7,11 @@ window.MediCareConfig = {
     HYDRATION_KEY: 'medicare_hydration_v1',
     THEME_KEY: 'medicare_theme_mode',
     
-    // SQLite Table Schemas
+    // SQLite Table Schemas (Multi-User Isolated)
     SQLITE_SCHEMA: `
         CREATE TABLE IF NOT EXISTS routines (
             id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
             dosage TEXT NOT NULL,
@@ -25,6 +26,7 @@ window.MediCareConfig = {
 
         CREATE TABLE IF NOT EXISTS history_logs (
             id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
             routine_id TEXT,
             routine_name TEXT,
             action TEXT,
@@ -33,53 +35,16 @@ window.MediCareConfig = {
         );
 
         CREATE TABLE IF NOT EXISTS hydration (
-            date_str TEXT PRIMARY KEY,
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            date_str TEXT NOT NULL,
             glasses INTEGER DEFAULT 0,
             target INTEGER DEFAULT 8
         );
     `,
 
-    DEFAULT_ROUTINES: [
-        {
-            id: 'demo-1',
-            name: 'ইনসুলিন (Lantus)',
-            type: 'injection',
-            dosage: '10 UI',
-            meal: 'খাবারের ৩০ মিনিট আগে',
-            time: '21:30',
-            stock: 5,
-            notes: 'ফ্রিজের নিচের দরজায় রাখতে হবে',
-            takenToday: false,
-            lastTakenDate: '',
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: 'demo-2',
-            name: 'Napa Extend (৬৬৫ মিলিগ্রাম)',
-            type: 'tablet',
-            dosage: '১ টি',
-            meal: 'খাবারের পরে (After Meal)',
-            time: '08:30',
-            stock: 14,
-            notes: 'জ্বর ও শরীর ব্যথার জন্য',
-            takenToday: true,
-            lastTakenDate: new Date().toDateString(),
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: 'demo-3',
-            name: 'Seclo 20mg (ওমিপ্রাজল)',
-            type: 'capsule',
-            dosage: '১ টি',
-            meal: 'খালি পেটে (Empty Stomach)',
-            time: '07:30',
-            stock: 20,
-            notes: 'সকালে ঘুম থেকে উঠে সেব্য',
-            takenToday: false,
-            lastTakenDate: '',
-            createdAt: new Date().toISOString()
-        }
-    ],
+    // Fresh Database - Start clean with no pre-filled fake routines
+    DEFAULT_ROUTINES: [],
 
     TYPE_MAPPINGS: {
         injection: {
