@@ -134,6 +134,21 @@ window.MediCareApp = (function () {
         window.MediCareUI.showToast(msg, 'success');
     }
 
+    function markTimeGroupAsTaken(dateStr, timeStr) {
+        const doses = window.MediCareStore.getDosesForDate(dateStr);
+        let takenCount = 0;
+        doses.forEach(dose => {
+            if (dose.time === timeStr && !dose.isTaken) {
+                window.MediCareStore.markDoseTaken(dose.routineId, dateStr, timeStr);
+                takenCount++;
+            }
+        });
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
+        window.MediCareUI.renderRoutines();
+        const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_group_taken', 'উক্ত সময়ের সকল ঔষধ সেবন সম্পন্ন হয়েছে!') : 'উক্ত সময়ের সকল ঔষধ সেবন সম্পন্ন হয়েছে!';
+        window.MediCareUI.showToast(msg, 'success');
+    }
+
     function markDoseAsUndo(routineId, dateStr, timeStr) {
         window.MediCareStore.markDoseUndo(routineId, dateStr, timeStr);
         if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
@@ -371,6 +386,7 @@ window.MediCareApp = (function () {
         markAsTaken,
         markAsUndo,
         markDoseAsTaken,
+        markTimeGroupAsTaken,
         markDoseAsUndo,
         deleteRoutine,
         handleSaveRoutine,
@@ -385,6 +401,7 @@ window.triggerDemoAlert = window.MediCareApp.triggerDemoAlert;
 window.markAsTaken = window.MediCareApp.markAsTaken;
 window.markAsUndo = window.MediCareApp.markAsUndo;
 window.markDoseAsTaken = window.MediCareApp.markDoseAsTaken;
+window.markTimeGroupAsTaken = window.MediCareApp.markTimeGroupAsTaken;
 window.markDoseAsUndo = window.MediCareApp.markDoseAsUndo;
 window.deleteRoutine = window.MediCareApp.deleteRoutine;
 

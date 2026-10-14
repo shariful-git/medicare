@@ -4,6 +4,32 @@
 
 window.MediCareUI = (function () {
     let pendingDeleteId = null;
+    let scheduleViewMode = localStorage.getItem('medicare_schedule_view_mode') || 'grouped';
+
+    function setViewMode(mode) {
+        scheduleViewMode = mode === 'list' ? 'list' : 'grouped';
+        localStorage.setItem('medicare_schedule_view_mode', scheduleViewMode);
+        updateViewModeButtons();
+        renderRoutines();
+    }
+
+    function updateViewModeButtons() {
+        const btnGrouped = document.getElementById('viewModeGrouped');
+        const btnList = document.getElementById('viewModeList');
+        if (btnGrouped && btnList) {
+            if (scheduleViewMode === 'grouped') {
+                btnGrouped.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white', 'shadow-xs');
+                btnGrouped.classList.remove('hover:text-slate-900', 'dark:hover:text-white');
+                btnList.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white', 'shadow-xs');
+                btnList.classList.add('hover:text-slate-900', 'dark:hover:text-white');
+            } else {
+                btnList.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white', 'shadow-xs');
+                btnList.classList.remove('hover:text-slate-900', 'dark:hover:text-white');
+                btnGrouped.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white', 'shadow-xs');
+                btnGrouped.classList.add('hover:text-slate-900', 'dark:hover:text-white');
+            }
+        }
+    }
 
     function escapeHtml(text) {
         if (!text) return '';
@@ -361,7 +387,9 @@ window.MediCareUI = (function () {
         const btnClone = t('btn_clone', 'ক্লোন করুন');
         const btnDelete = t('btn_delete', 'ডিলিট করুন');
 
-        filtered.forEach(item => {
+        updateViewModeButtons();
+
+        function createDoseCard(item) {
             const card = document.createElement('div');
             const isLowStock = item.stock !== undefined && item.stock !== '' && Number(item.stock) <= 3;
             const isOutOfStock = item.stock !== undefined && item.stock !== '' && Number(item.stock) === 0;
@@ -390,7 +418,7 @@ window.MediCareUI = (function () {
                                 ${escapeHtml(item.name)}
                             </h3>
                             ${getTypeBadge(item.type)}
-                            ${getTimeOfDayBadge(item.time)}
+                            ${scheduleViewMode === 'list' ? getTimeOfDayBadge(item.time) : ''}
                             <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono border border-slate-200 dark:border-slate-700">
                                 ⏰ ${formatBengaliTime(item.time)}
                             </span>
@@ -436,9 +464,101 @@ window.MediCareUI = (function () {
                     </button>
                 </div>
             `;
+            return card;
+        }
 
-            listEl.appendChild(card);
-        });
+        if (scheduleViewMode === 'grouped') {
+            const groups = {};
+            filtered.forEach(item => {
+                const tKey = item.time || '08:00';
+                if (!groups[tKey]) groups[tKey] = [];
+                groups[tKey].push(item);
+            });
+
+            const sortedTimes = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+
+            sortedTimes.forEach(timeStr => {
+                const itemsInGroup = groups[timeStr];
+                const takenCount = itemsInGroup.filter(i => i.isTaken).length;
+                const pendingCount = itemsInGroup.length - takenCount;
+                const isAllTaken = pendingCount === 0;
+
+                const groupWrapper = document.createElement('div');
+                groupWrapper.className = 'time-group-block space-y-2.5 pt-1';
+
+                const groupHeader = document.createElement('div');
+                groupHeader.className = `time-group-header flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-md ${
+                    isAllTaken 
+                        ? 'bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800' 
+                        : 'bg-white dark:bg-slate-900 border border-sky-200/80 dark:border-sky-800/60 shadow-xs'
+                }`;
+
+                const formattedTime = formatBengaliTime(timeStr);
+                const countText = `${fmt(itemsInGroup.length)} ${t('unit_med', 'টি ঔষধ')}`;
+                const allTakenText = t('group_all_taken', `সকল ডোজ সম্পন্ন (${fmt(takenCount)}/${fmt(itemsInGroup.length)})`)
+                    .replace('{taken}', fmt(takenCount))
+                    .replace('{total}', fmt(itemsInGroup.length));
+                const pendingText = t('group_pending', `${fmt(pendingCount)}টি বাকি`)
+                    .replace('{pending}', fmt(pendingCount));
+                const markAllText = t('group_mark_all', 'সবগুলো গ্রহণ');
+
+                groupHeader.innerHTML = `
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                        <div class="w-8 h-8 rounded-md flex items-center justify-center shrink-0 border ${
+                            isAllTaken 
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400' 
+                                : 'bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-800 text-[#0284c7] dark:text-sky-400'
+                        }">
+                            <i data-lucide="${isAllTaken ? 'check-circle-2' : 'clock'}" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white font-mono tracking-tight flex items-center gap-1.5">
+                                <span>${formattedTime}</span>
+                            </span>
+                            ${getTimeOfDayBadge(timeStr)}
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                ${countText}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto flex-wrap">
+                        ${isAllTaken ? `
+                            <span class="text-xs font-bold px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                                <i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                                <span>${allTakenText}</span>
+                            </span>
+                        ` : `
+                            <span class="text-xs font-bold px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5">
+                                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                                <span>${pendingText}</span>
+                            </span>
+                            ${itemsInGroup.length > 1 ? `
+                                <button onclick="window.MediCareApp.markTimeGroupAsTaken('${selectedDate}', '${timeStr}')" title="${markAllText}" class="min-h-[34px] px-3 py-1 text-xs font-bold rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-2xs transition flex items-center gap-1 active:scale-95">
+                                    <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                                    <span>${markAllText}</span>
+                                </button>
+                            ` : ''}
+                        `}
+                    </div>
+                `;
+
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'time-group-cards space-y-2.5 pl-2 sm:pl-3.5 border-l-2 border-sky-300/60 dark:border-sky-800/70 ml-3.5 sm:ml-4';
+
+                itemsInGroup.forEach(item => {
+                    cardsContainer.appendChild(createDoseCard(item));
+                });
+
+                groupWrapper.appendChild(groupHeader);
+                groupWrapper.appendChild(cardsContainer);
+                listEl.appendChild(groupWrapper);
+            });
+        } else {
+            filtered.forEach(item => {
+                listEl.appendChild(createDoseCard(item));
+            });
+        }
 
         if (window.lucide) window.lucide.createIcons();
     }
@@ -1140,6 +1260,7 @@ window.MediCareUI = (function () {
         closeDeleteConfirmModal,
         executePendingDelete,
         setFilter,
+        setViewMode,
         setQuickTime,
         showAlarmModal,
         dismissAlarmModal
@@ -1151,6 +1272,7 @@ window.openModal = window.MediCareUI.openModal;
 window.closeModal = window.MediCareUI.closeModal;
 window.cloneRoutine = window.MediCareUI.cloneRoutine;
 window.setFilter = window.MediCareUI.setFilter;
+window.setViewMode = window.MediCareUI.setViewMode;
 window.setQuickTime = window.MediCareUI.setQuickTime;
 window.dismissAlarm = window.MediCareUI.dismissAlarmModal;
 window.toggleTheme = window.MediCareUI.toggleTheme;

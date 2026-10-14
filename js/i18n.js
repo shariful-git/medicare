@@ -44,6 +44,13 @@ window.MediCareI18n = (function () {
             filter_pending: 'বাকি আছে',
             filter_taken: 'সেবন করেছি',
             sound_test: 'সাউন্ড টেস্ট',
+            view_grouped: 'সময় অনুযায়ী গ্রুপ',
+            view_list: 'একক তালিকা',
+            group_all_taken: 'সকল ডোজ সম্পন্ন ({taken}/{total})',
+            group_pending: '{pending}টি বাকি',
+            group_mark_all: 'সবগুলো গ্রহণ',
+            toast_group_taken: 'উক্ত সময়ের সকল ঔষধ সেবন সম্পন্ন হয়েছে!',
+            unit_med: 'টি ঔষধ',
 
             // Empty State
             empty_title: 'কোনো রুটিন পাওয়া যায়নি',
@@ -290,6 +297,13 @@ window.MediCareI18n = (function () {
             filter_pending: 'Pending',
             filter_taken: 'Taken',
             sound_test: 'Sound Test',
+            view_grouped: 'Group by Time',
+            view_list: 'Single List',
+            group_all_taken: 'All Doses Completed ({taken}/{total})',
+            group_pending: '{pending} Pending',
+            group_mark_all: 'Take All',
+            toast_group_taken: 'All medicines for this time marked as taken!',
+            unit_med: 'Medicines',
 
             // Empty State
             empty_title: 'No Routines Found',
