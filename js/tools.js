@@ -102,6 +102,9 @@ window.MediCareTools = (function () {
             ? '* চিকিৎসকের পরামর্শ অনুযায়ী নিয়মিত সঠিক সময়ে ঔষধ গ্রহণ করুন। সুস্থ থাকুন, নিরাপদে থাকুন।'
             : '* Take medications strictly according to your physician\'s advice. Stay safe and healthy.';
 
+        const colDuration = isBn ? 'মেয়াদ' : 'Course';
+        const colTimes = isBn ? 'দৈনিক সময়সূচি' : 'Daily Times';
+
         const html = `
             <!DOCTYPE html>
             <html lang="${isBn ? 'bn' : 'en'}">
@@ -135,22 +138,29 @@ window.MediCareTools = (function () {
                             <th>${colType}</th>
                             <th>${colDosage}</th>
                             <th>${colMeal}</th>
-                            <th>${colTime}</th>
+                            <th>${colDuration}</th>
+                            <th>${colTimes}</th>
                             <th>${colNotes}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${routines.map((r, i) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td><b>${escapeHtml(r.name)}</b></td>
-                                <td><span class="badge">${escapeHtml(r.type)}</span></td>
-                                <td>${escapeHtml(r.dosage)}</td>
-                                <td>${escapeHtml(r.meal)}</td>
-                                <td><b>${window.MediCareI18n ? window.MediCareI18n.formatTime(r.time) : r.time}</b></td>
-                                <td>${escapeHtml(r.notes || '-')}</td>
-                            </tr>
-                        `).join('')}
+                        ${routines.map((r, i) => {
+                            const timesList = (Array.isArray(r.times) && r.times.length > 0) ? r.times : [r.time || '08:00'];
+                            const timesFormatted = timesList.map(t => window.MediCareI18n ? window.MediCareI18n.formatTime(t) : t).join(', ');
+                            const durationStr = r.durationDays ? `${r.durationDays} ${isBn ? 'দিন' : 'days'}` : '-';
+                            return `
+                                <tr>
+                                    <td>${i + 1}</td>
+                                    <td><b>${escapeHtml(r.name)}</b></td>
+                                    <td><span class="badge">${escapeHtml(r.type)}</span></td>
+                                    <td>${escapeHtml(r.dosage)}</td>
+                                    <td>${escapeHtml(r.meal)}</td>
+                                    <td><b>${escapeHtml(durationStr)}</b></td>
+                                    <td><b>${timesFormatted}</b></td>
+                                    <td>${escapeHtml(r.notes || '-')}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
                 <div class="footer">

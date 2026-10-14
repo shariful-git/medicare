@@ -21,7 +21,13 @@ window.MediCareConfig = {
             notes TEXT,
             takenToday INTEGER DEFAULT 0,
             lastTakenDate TEXT,
-            createdAt TEXT
+            createdAt TEXT,
+            startDate TEXT DEFAULT '',
+            durationDays INTEGER DEFAULT 1,
+            endDate TEXT DEFAULT '',
+            frequency INTEGER DEFAULT 1,
+            timesJson TEXT DEFAULT '',
+            takenHistoryJson TEXT DEFAULT '{}'
         );
 
         CREATE TABLE IF NOT EXISTS history_logs (

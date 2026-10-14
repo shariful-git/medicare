@@ -18,7 +18,10 @@ window.MediCareApp = (function () {
         // Storage & SQLite init
         await window.MediCareStore.init();
 
-        // Render routine list
+        // Render date navigation strip and routines
+        if (window.MediCareUI.renderDateStrip) {
+            window.MediCareUI.renderDateStrip();
+        }
         window.MediCareUI.renderRoutines();
 
         // Hydration UI init
@@ -73,11 +76,12 @@ window.MediCareApp = (function () {
 
     function checkDueAlarms(currentHour, currentMin) {
         const currentTimeStr = `${currentHour}:${currentMin}`;
-        const routines = window.MediCareStore.getRoutines();
+        const todayStr = window.MediCareStore.getTodayDateStr();
+        const doses = window.MediCareStore.getDosesForDate(todayStr);
 
-        routines.forEach(item => {
-            if (item.time === currentTimeStr && !item.takenToday) {
-                triggerMedAlarm(item);
+        doses.forEach(dose => {
+            if (dose.time === currentTimeStr && !dose.isTaken) {
+                triggerMedAlarm(dose);
             }
         });
     }
@@ -85,7 +89,11 @@ window.MediCareApp = (function () {
     function triggerMedAlarm(item) {
         activeAlarmRoutine = item;
         window.MediCareUI.showAlarmModal(item, () => {
-            markAsTaken(item.id);
+            if (item.dateStr && item.routineId) {
+                markDoseAsTaken(item.routineId, item.dateStr, item.time);
+            } else {
+                markAsTaken(item.id || item.routineId);
+            }
         });
 
         window.MediCareAudio.startContinuousAlarm();
@@ -118,8 +126,25 @@ window.MediCareApp = (function () {
         triggerMedAlarm(demoItem);
     }
 
+    function markDoseAsTaken(routineId, dateStr, timeStr) {
+        window.MediCareStore.markDoseTaken(routineId, dateStr, timeStr);
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
+        window.MediCareUI.renderRoutines();
+        const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_dose_taken') : 'ডোজ সেবন সম্পন্ন হয়েছে!';
+        window.MediCareUI.showToast(msg, 'success');
+    }
+
+    function markDoseAsUndo(routineId, dateStr, timeStr) {
+        window.MediCareStore.markDoseUndo(routineId, dateStr, timeStr);
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
+        window.MediCareUI.renderRoutines();
+        const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_dose_undo') : 'ডোজ সেবন আনডু করা হয়েছে';
+        window.MediCareUI.showToast(msg, 'info');
+    }
+
     function markAsTaken(id) {
         window.MediCareStore.markTaken(id);
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
         window.MediCareUI.renderRoutines();
         const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_taken') : 'ঔষধ সেবন সম্পন্ন হিসেবে চিহ্নিত হয়েছে!';
         window.MediCareUI.showToast(msg, 'success');
@@ -127,6 +152,7 @@ window.MediCareApp = (function () {
 
     function markAsUndo(id) {
         window.MediCareStore.markUndo(id);
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
         window.MediCareUI.renderRoutines();
         const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_undo') : 'সেবনের হিসাব আনডু করা হয়েছে';
         window.MediCareUI.showToast(msg, 'info');
@@ -134,6 +160,7 @@ window.MediCareApp = (function () {
 
     function deleteRoutine(id) {
         window.MediCareStore.deleteRoutine(id);
+        if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
         window.MediCareUI.renderRoutines();
     }
 
@@ -146,11 +173,28 @@ window.MediCareApp = (function () {
         const type = typeEl ? typeEl.value : 'tablet';
         const dosage = document.getElementById('medDosage').value.trim();
         const meal = document.getElementById('medMeal').value;
-        const time = document.getElementById('medTime').value;
         const stock = document.getElementById('medStock').value;
         const notes = document.getElementById('medNotes').value.trim();
 
-        if (!name || !dosage || !time) return;
+        const startDate = document.getElementById('medStartDate')?.value || window.MediCareStore.getTodayDateStr();
+        const durationDays = parseInt(document.getElementById('medDurationDays')?.value || 3, 10) || 3;
+        const endDate = window.MediCareStore.calculateEndDate(startDate, durationDays);
+
+        // Collect all dose times from dynamic inputs
+        const timeInputs = document.querySelectorAll('.dose-time-input');
+        const times = [];
+        timeInputs.forEach(inp => {
+            const v = inp.value.trim();
+            if (v && !times.includes(v)) {
+                times.push(v);
+            }
+        });
+        if (times.length === 0) {
+            times.push('08:00');
+        }
+        times.sort();
+
+        if (!name || !dosage) return;
 
         if (editingId && !isCloning) {
             window.MediCareStore.updateRoutine(editingId, {
@@ -158,11 +202,17 @@ window.MediCareApp = (function () {
                 type,
                 dosage,
                 meal,
-                time,
+                times,
+                time: times[0],
+                startDate,
+                durationDays,
+                endDate,
+                frequency: times.length,
                 stock: stock !== '' ? parseInt(stock, 10) : '',
                 notes
             });
             window.MediCareUI.closeModal();
+            if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
             window.MediCareUI.renderRoutines();
             const msg = window.MediCareI18n ? window.MediCareI18n.t('toast_updated') : 'ঔষধের তথ্য সফলভাবে আপডেট হয়েছে!';
             window.MediCareUI.showToast(msg, 'success');
@@ -173,9 +223,15 @@ window.MediCareApp = (function () {
                 type,
                 dosage,
                 meal,
-                time,
+                times,
+                time: times[0],
+                startDate,
+                durationDays,
+                endDate,
+                frequency: times.length,
                 stock: stock !== '' ? parseInt(stock, 10) : '',
                 notes,
+                takenHistory: {},
                 takenToday: false,
                 lastTakenDate: '',
                 createdAt: new Date().toISOString()
@@ -183,6 +239,7 @@ window.MediCareApp = (function () {
 
             window.MediCareStore.addRoutine(newRoutine, isCloning);
             window.MediCareUI.closeModal();
+            if (window.MediCareUI.renderDateStrip) window.MediCareUI.renderDateStrip();
             window.MediCareUI.renderRoutines();
             const msg = isCloning
                 ? (window.MediCareI18n ? window.MediCareI18n.t('toast_cloned') : 'ঔষধ শিডিউল সফলভাবে ক্লোন ও সংরক্ষণ করা হয়েছে!')
@@ -313,6 +370,8 @@ window.MediCareApp = (function () {
         init,
         markAsTaken,
         markAsUndo,
+        markDoseAsTaken,
+        markDoseAsUndo,
         deleteRoutine,
         handleSaveRoutine,
         triggerDemoAlert,
@@ -325,6 +384,8 @@ window.handleSaveRoutine = window.MediCareApp.handleSaveRoutine;
 window.triggerDemoAlert = window.MediCareApp.triggerDemoAlert;
 window.markAsTaken = window.MediCareApp.markAsTaken;
 window.markAsUndo = window.MediCareApp.markAsUndo;
+window.markDoseAsTaken = window.MediCareApp.markDoseAsTaken;
+window.markDoseAsUndo = window.MediCareApp.markDoseAsUndo;
 window.deleteRoutine = window.MediCareApp.deleteRoutine;
 
 // Escape key dismiss for modals

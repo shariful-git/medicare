@@ -164,6 +164,7 @@ window.MediCareUI = (function () {
 
         // Refresh dynamic content for the specific tab
         if (tabId === 'schedule') {
+            renderDateStrip();
             renderRoutines();
         } else if (tabId === 'history') {
             initHistorySearch();
@@ -177,7 +178,132 @@ window.MediCareUI = (function () {
     }
 
     // ==========================================
-    // ROUTINES RENDERING
+    // HORIZONTAL DATE STRIP CONTROLLER
+    // ==========================================
+    function renderDateStrip() {
+        const container = document.getElementById('dateStripScroll');
+        if (!container) return;
+
+        const selectedDate = window.MediCareStore.getSelectedDate();
+        const todayStr = window.MediCareStore.getTodayDateStr();
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+
+        // Generate a 31-day window around today (-5 days to +25 days)
+        const dates = [];
+        const baseNow = new Date();
+        for (let offset = -5; offset <= 25; offset++) {
+            const d = new Date(baseNow);
+            d.setDate(baseNow.getDate() + offset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${y}-${m}-${day}`;
+            dates.push({ dateObj: d, dateStr });
+        }
+
+        container.innerHTML = '';
+
+        dates.forEach(({ dateObj, dateStr }) => {
+            const isToday = dateStr === todayStr;
+            const isActive = dateStr === selectedDate;
+            const status = window.MediCareStore.getDateBadgeStatus(dateStr);
+
+            let dotHtml = '';
+            if (status.hasMeds) {
+                if (status.allTaken) {
+                    dotHtml = `<span class="date-dot dot-completed" title="${t('stat_taken', 'সম্পন্ন')} (${status.taken}/${status.total})"></span>`;
+                } else {
+                    dotHtml = `<span class="date-dot dot-pending" title="${t('stat_pending', 'বাকি আছে')} (${status.total - status.taken}/${status.total})"></span>`;
+                }
+            }
+
+            const dayName = isToday 
+                ? (window.MediCareI18n && window.MediCareI18n.getLanguage() === 'bn' ? 'আজ' : 'Today')
+                : (window.MediCareI18n ? window.MediCareI18n.getDayShortName(dateObj) : dateObj.toLocaleDateString('en-US', { weekday: 'short' }));
+            
+            const monthName = window.MediCareI18n ? window.MediCareI18n.getMonthShortName(dateObj) : dateObj.toLocaleDateString('en-US', { month: 'short' });
+            const dayNum = window.MediCareI18n ? window.MediCareI18n.formatNumber(dateObj.getDate()) : dateObj.getDate();
+
+            const card = document.createElement('div');
+            card.id = `dateCard_${dateStr}`;
+            card.className = `date-strip-card ${isActive ? 'active' : ''} ${isToday ? 'is-today' : ''}`;
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Date ${dateStr}`);
+            card.onclick = () => selectDate(dateStr);
+
+            card.innerHTML = `
+                <span class="text-[10px] font-bold uppercase tracking-wider opacity-85 leading-tight">${escapeHtml(dayName)}</span>
+                <span class="text-base sm:text-lg font-black font-mono leading-none my-1">${dayNum}</span>
+                <span class="text-[10px] opacity-75 font-semibold">${escapeHtml(monthName)}</span>
+                <div class="h-2 flex items-center justify-center mt-1">
+                    ${dotHtml}
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+
+        // Update Title & Badge for currently selected date
+        updateSelectedDateHeader(selectedDate, todayStr);
+    }
+
+    function updateSelectedDateHeader(selectedDate, todayStr) {
+        const titleEl = document.getElementById('selectedDateDisplayTitle');
+        const badgeEl = document.getElementById('selectedDateCountBadge');
+        if (!titleEl) return;
+
+        const isToday = selectedDate === todayStr;
+        const parts = selectedDate.split('-').map(Number);
+        const selObj = new Date(parts[0], parts[1] - 1, parts[2]);
+
+        const formattedDate = window.MediCareI18n ? window.MediCareI18n.formatDate(selObj) : selObj.toLocaleDateString();
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+
+        if (isToday) {
+            const shortFormatted = window.MediCareI18n ? window.MediCareI18n.formatDateShort(selObj) : `${selObj.getDate()} ${selObj.getMonth() + 1}`;
+            titleEl.textContent = `${t('btn_today', 'আজকের দিন')}, ${shortFormatted} (${t('active_status', 'সক্রিয়')})`;
+        } else {
+            titleEl.textContent = `${formattedDate}`;
+        }
+
+        const stats = window.MediCareStore.getStatsForDate(selectedDate);
+        if (badgeEl) {
+            const fmtNum = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+            badgeEl.textContent = `${fmtNum(stats.total)}টি ডোজ (${fmtNum(stats.taken)}টি সম্পন্ন)`;
+        }
+    }
+
+    function selectDate(dateStr) {
+        if (!dateStr) return;
+        window.MediCareStore.setSelectedDate(dateStr);
+
+        // Update active class on date strip cards
+        document.querySelectorAll('.date-strip-card').forEach(c => c.classList.remove('active'));
+        const targetCard = document.getElementById(`dateCard_${dateStr}`);
+        if (targetCard) {
+            targetCard.classList.add('active');
+            targetCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+
+        const todayStr = window.MediCareStore.getTodayDateStr();
+        updateSelectedDateHeader(dateStr, todayStr);
+        renderRoutines();
+    }
+
+    function scrollDateStrip(direction) {
+        const container = document.getElementById('dateStripScroll');
+        if (!container) return;
+        const scrollAmount = direction === 'left' ? -220 : 220;
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+
+    function goToToday() {
+        const todayStr = window.MediCareStore.getTodayDateStr();
+        selectDate(todayStr);
+    }
+
+    // ==========================================
+    // ROUTINES RENDERING (DYNAMIC FOR SELECTED DATE)
     // ==========================================
     function renderRoutines() {
         const listEl = document.getElementById('medicineList');
@@ -185,8 +311,9 @@ window.MediCareUI = (function () {
         if (!listEl) return;
 
         listEl.innerHTML = '';
-        const filtered = window.MediCareStore.getFilteredRoutines();
-        const stats = window.MediCareStore.getStats();
+        const selectedDate = window.MediCareStore.getSelectedDate();
+        const filtered = window.MediCareStore.getFilteredDosesForDate(selectedDate);
+        const stats = window.MediCareStore.getStatsForDate(selectedDate);
 
         // Update Counter Stats & Progress Bar
         const statTotal = document.getElementById('statTotal');
@@ -196,15 +323,28 @@ window.MediCareUI = (function () {
         const progressBar = document.getElementById('dailyProgressBar');
         const greetingEl = document.getElementById('heroGreetingText');
 
+        const fmt = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+
         if (greetingEl) greetingEl.textContent = getGreetingText();
-        if (statTotal) statTotal.textContent = stats.total;
-        if (statPending) statPending.textContent = stats.pending;
-        if (statTaken) statTaken.textContent = stats.taken;
-        if (statPercent) statPercent.textContent = `${stats.percentage}%`;
+        if (statTotal) statTotal.textContent = fmt(stats.total);
+        if (statPending) statPending.textContent = fmt(stats.pending);
+        if (statTaken) statTaken.textContent = fmt(stats.taken);
+        if (statPercent) statPercent.textContent = `${fmt(stats.percentage)}%`;
         if (progressBar) progressBar.style.width = `${stats.percentage}%`;
 
+        // Update date badge on date strip too
+        const todayStr = window.MediCareStore.getTodayDateStr();
+        updateSelectedDateHeader(selectedDate, todayStr);
+
         if (filtered.length === 0) {
-            if (emptyEl) emptyEl.classList.remove('hidden');
+            if (emptyEl) {
+                emptyEl.classList.remove('hidden');
+                const emptyTitle = document.getElementById('emptyStateTitle');
+                const emptyDesc = document.getElementById('emptyStateDesc');
+                const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+                if (emptyTitle) emptyTitle.textContent = t('empty_title', 'উক্ত তারিখে কোনো রুটিন পাওয়া যায়নি');
+                if (emptyDesc) emptyDesc.textContent = t('empty_desc', 'এই তারিখে কোনো ঔষধের সেবন তালিকা নেই। নতুন ঔষধের কোর্স যোগ করুন।');
+            }
             return;
         }
         if (emptyEl) emptyEl.classList.add('hidden');
@@ -227,15 +367,18 @@ window.MediCareUI = (function () {
             const isOutOfStock = item.stock !== undefined && item.stock !== '' && Number(item.stock) === 0;
 
             card.className = `med-card p-3.5 sm:p-4 rounded-md ${
-                item.takenToday 
+                item.isTaken 
                     ? 'bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800' 
                     : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs'
             } transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5`;
 
+            const dayIndexFormatted = fmt(item.dayIndex);
+            const durationFormatted = fmt(item.durationDays);
+
             card.innerHTML = `
                 <div class="flex items-start gap-3 flex-1 min-w-0">
                     <div class="w-11 h-11 rounded-md flex items-center justify-center shrink-0 border ${
-                        item.takenToday 
+                        item.isTaken 
                             ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400' 
                             : 'bg-sky-50 dark:bg-sky-950/60 border-sky-200/70 dark:border-sky-800/60 text-[#0284c7] dark:text-sky-400'
                     }">
@@ -243,13 +386,16 @@ window.MediCareUI = (function () {
                     </div>
                     <div class="space-y-1 min-w-0 flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="font-bold text-sm sm:text-base truncate ${item.takenToday ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+                            <h3 class="font-bold text-sm sm:text-base truncate ${item.isTaken ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
                                 ${escapeHtml(item.name)}
                             </h3>
                             ${getTypeBadge(item.type)}
                             ${getTimeOfDayBadge(item.time)}
                             <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono border border-slate-200 dark:border-slate-700">
                                 ⏰ ${formatBengaliTime(item.time)}
+                            </span>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-[#0284c7] dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-mono">
+                                📅 ${durationFormatted} দিনের কোর্সের ${dayIndexFormatted}ম দিন
                             </span>
                         </div>
                         <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 font-medium flex-wrap pt-0.5">
@@ -259,7 +405,7 @@ window.MediCareUI = (function () {
                             ${item.stock !== undefined && item.stock !== '' ? `
                                 <span>•</span>
                                 <span class="${isLowStock ? 'text-rose-600 dark:text-rose-400 font-bold low-stock-badge' : ''}">
-                                    ${isOutOfStock ? stockOutLabel : `${stockLabel} ${escapeHtml(item.stock)}`}
+                                    ${isOutOfStock ? stockOutLabel : `${stockLabel} ${fmt(item.stock)}`}
                                 </span>
                             ` : ''}
                         </div>
@@ -268,24 +414,24 @@ window.MediCareUI = (function () {
                 </div>
 
                 <div class="flex items-center gap-2 self-stretch sm:self-center shrink-0 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
-                    ${!item.takenToday ? `
-                        <button onclick="window.MediCareApp.markAsTaken('${item.id}')" class="flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 active:scale-95">
+                    ${!item.isTaken ? `
+                        <button onclick="window.MediCareApp.markDoseAsTaken('${item.routineId}', '${item.dateStr}', '${item.time}')" class="flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 active:scale-95">
                             <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
                             ${btnTaken}
                         </button>
                     ` : `
-                        <button onclick="window.MediCareApp.markAsUndo('${item.id}')" class="flex-1 sm:flex-initial min-h-[44px] px-3.5 py-2.5 rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition flex items-center justify-center gap-1 active:scale-95">
+                        <button onclick="window.MediCareApp.markDoseAsUndo('${item.routineId}', '${item.dateStr}', '${item.time}')" class="flex-1 sm:flex-initial min-h-[44px] px-3.5 py-2.5 rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition flex items-center justify-center gap-1 active:scale-95">
                             <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                             ${btnUndo}
                         </button>
                     `}
-                    <button onclick="window.MediCareUI.openModal('${item.id}')" title="${btnEdit}" aria-label="${btnEdit}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-[#0284c7] hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 transition flex items-center justify-center active:scale-95">
+                    <button onclick="window.MediCareUI.openModal('${item.routineId}')" title="${btnEdit}" aria-label="${btnEdit}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-[#0284c7] hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 transition flex items-center justify-center active:scale-95">
                         <i data-lucide="edit-3" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="window.MediCareUI.cloneRoutine('${item.id}')" title="${btnClone}" aria-label="${btnClone}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-teal-600 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition flex items-center justify-center active:scale-95">
+                    <button onclick="window.MediCareUI.cloneRoutine('${item.routineId}')" title="${btnClone}" aria-label="${btnClone}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-teal-600 hover:border-teal-500 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition flex items-center justify-center active:scale-95">
                         <i data-lucide="copy" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="window.MediCareUI.confirmDelete('${item.id}', '${escapeHtml(item.name)}')" title="${btnDelete}" aria-label="${btnDelete}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center justify-center active:scale-95">
+                    <button onclick="window.MediCareUI.confirmDelete('${item.routineId}', '${escapeHtml(item.name)}')" title="${btnDelete}" aria-label="${btnDelete}" class="min-h-[44px] min-w-[44px] p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-rose-600 hover:border-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center justify-center active:scale-95">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -296,6 +442,7 @@ window.MediCareUI = (function () {
 
         if (window.lucide) window.lucide.createIcons();
     }
+
 
     // ==========================================
     // HISTORY LOGS VIEW & 20-ITEM PAGINATION (MAIN APP CARD ARCHITECTURE)
@@ -617,6 +764,149 @@ window.MediCareUI = (function () {
     }
 
     // ==========================================
+    // COURSE DURATION & FREQUENCY CONTROLLERS
+    // ==========================================
+    function setDurationPreset(days) {
+        const input = document.getElementById('medDurationDays');
+        if (input) {
+            input.value = days;
+        }
+        document.querySelectorAll('.duration-chip').forEach(btn => {
+            const d = parseInt(btn.getAttribute('data-days'), 10);
+            if (d === days) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        onCourseConfigChanged();
+    }
+
+    function setFrequencyPreset(freq) {
+        document.querySelectorAll('.freq-chip').forEach(btn => {
+            const f = parseInt(btn.getAttribute('data-freq'), 10);
+            if (f === freq) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Smart preset times based on standard medical frequencies
+        let presetTimes = ['08:00'];
+        if (freq === 1) {
+            presetTimes = ['08:00'];
+        } else if (freq === 2) {
+            presetTimes = ['08:00', '21:00'];
+        } else if (freq === 3) {
+            presetTimes = ['08:00', '14:00', '21:00'];
+        } else if (freq === 4) {
+            presetTimes = ['08:00', '13:00', '18:00', '22:00'];
+        }
+
+        renderDoseTimeSlots(presetTimes);
+        onCourseConfigChanged();
+    }
+
+    function renderDoseTimeSlots(timesList) {
+        const container = document.getElementById('doseTimesList');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+        const fmt = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+
+        const defaultLabels = [
+            t('dose_slot_morning', 'সকালের ডোজ'),
+            t('dose_slot_noon', 'দুপুরের ডোজ'),
+            t('dose_slot_evening', 'সন্ধ্যার ডোজ'),
+            t('dose_slot_night', 'রাতের ডোজ')
+        ];
+
+        timesList.forEach((timeVal, idx) => {
+            const row = document.createElement('div');
+            row.className = 'dose-time-row flex items-center justify-between gap-3';
+            const label = defaultLabels[idx] || `${t('dose_slot_custom', 'ডোজ')} ${fmt(idx + 1)}`;
+
+            row.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded bg-[#0284c7]/10 text-[#0284c7] dark:text-sky-300 font-bold text-xs flex items-center justify-center font-mono">
+                        ${fmt(idx + 1)}
+                    </span>
+                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(label)}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="time" value="${timeVal || '08:00'}" required onchange="window.MediCareUI.onCourseConfigChanged()" class="dose-time-input px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-[#0284c7] outline-none">
+                    ${timesList.length > 1 ? `
+                        <button type="button" onclick="window.MediCareUI.removeCustomTimeSlot(this)" title="মুছে ফেলুন" class="p-1.5 rounded hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            container.appendChild(row);
+        });
+
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function addCustomTimeSlot(defaultTime = '12:00') {
+        const container = document.getElementById('doseTimesList');
+        if (!container) return;
+
+        const currentTimes = [];
+        container.querySelectorAll('.dose-time-input').forEach(inp => currentTimes.push(inp.value));
+        currentTimes.push(defaultTime);
+        renderDoseTimeSlots(currentTimes);
+        onCourseConfigChanged();
+    }
+
+    function removeCustomTimeSlot(btn) {
+        const row = btn.closest('.dose-time-row');
+        if (row) {
+            row.remove();
+            onCourseConfigChanged();
+        }
+    }
+
+    function onCourseConfigChanged() {
+        const startDateInp = document.getElementById('medStartDate');
+        const durationInp = document.getElementById('medDurationDays');
+        const rangeSummary = document.getElementById('courseDateRangeSummary');
+        const summaryText = document.getElementById('courseSummaryText');
+        const suggestedStockTag = document.getElementById('suggestedStockTag');
+        const stockInput = document.getElementById('medStock');
+
+        const startDate = startDateInp ? startDateInp.value : window.MediCareStore.getTodayDateStr();
+        const duration = Math.max(1, parseInt(durationInp ? durationInp.value : 3, 10) || 1);
+        const endDate = window.MediCareStore.calculateEndDate(startDate, duration);
+
+        const timeInputs = document.querySelectorAll('.dose-time-input');
+        const freqCount = timeInputs.length || 1;
+        const totalDoses = duration * freqCount;
+
+        const fmt = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+
+        if (rangeSummary) {
+            rangeSummary.textContent = `${fmt(duration)} দিন (${startDate} থেকে ${endDate})`;
+        }
+
+        if (summaryText) {
+            summaryText.textContent = `${fmt(duration)} দিনের কোর্স • প্রতিদিন ${fmt(freqCount)} বার • সর্বমোট ${fmt(totalDoses)}টি ডোজ`;
+        }
+
+        if (suggestedStockTag) {
+            suggestedStockTag.textContent = `মোট প্রয়োজন: ${fmt(totalDoses)}টি`;
+        }
+
+        // Auto-suggest stock if empty
+        if (stockInput && (!stockInput.value || stockInput.dataset.autoFilled === 'true')) {
+            stockInput.value = totalDoses;
+            stockInput.dataset.autoFilled = 'true';
+        }
+    }
+
+    // ==========================================
     // ROUTINE ADD / EDIT / CLONE MODAL
     // ==========================================
     function openModal(editId = null, isClone = false) {
@@ -633,6 +923,12 @@ window.MediCareUI = (function () {
 
         const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
 
+        const selectedDate = window.MediCareStore.getSelectedDate();
+        const startDateInp = document.getElementById('medStartDate');
+        const durationInp = document.getElementById('medDurationDays');
+        const stockInput = document.getElementById('medStock');
+        if (stockInput) delete stockInput.dataset.autoFilled;
+
         if (editId) {
             const routine = window.MediCareStore.getRoutineById(editId);
             if (routine) {
@@ -643,20 +939,12 @@ window.MediCareUI = (function () {
                     if (cloneNoticeBanner) cloneNoticeBanner.classList.remove('hidden');
 
                     const cloneTitle = t('modal_clone_title', 'ঔষধ শিডিউল ক্লোন করুন');
-                    if (modalTitleText) {
-                        modalTitleText.textContent = cloneTitle;
-                    } else if (modalTitle) {
-                        modalTitle.textContent = cloneTitle;
-                    }
-
+                    if (modalTitleText) modalTitleText.textContent = cloneTitle;
                     if (modalIcon) {
                         modalIcon.setAttribute('data-lucide', 'copy');
                         modalIcon.className = 'w-5 h-5 text-teal-600 dark:text-teal-400';
                     }
-
-                    if (submitBtnText) {
-                        submitBtnText.textContent = t('btn_clone_save', 'ক্লোন সংরক্ষণ করুন');
-                    }
+                    if (submitBtnText) submitBtnText.textContent = t('btn_clone_save', 'ক্লোন সংরক্ষণ করুন');
                 } else {
                     // EDIT EXISTING ROUTINE MODE
                     if (isCloningInput) isCloningInput.value = 'false';
@@ -664,28 +952,32 @@ window.MediCareUI = (function () {
                     if (cloneNoticeBanner) cloneNoticeBanner.classList.add('hidden');
 
                     const editTitle = t('modal_edit_title', 'ঔষধের তথ্য সম্পাদনা করুন');
-                    if (modalTitleText) {
-                        modalTitleText.textContent = editTitle;
-                    } else if (modalTitle) {
-                        modalTitle.textContent = editTitle;
-                    }
-
+                    if (modalTitleText) modalTitleText.textContent = editTitle;
                     if (modalIcon) {
                         modalIcon.setAttribute('data-lucide', 'edit-3');
                         modalIcon.className = 'w-5 h-5 text-[#0284c7] dark:text-sky-400';
                     }
-
-                    if (submitBtnText) {
-                        submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
-                    }
+                    if (submitBtnText) submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
                 }
 
                 document.getElementById('medName').value = routine.name || '';
                 document.getElementById('medDosage').value = routine.dosage || '';
                 document.getElementById('medMeal').value = routine.meal || 'খাবারের পরে (After Meal)';
-                document.getElementById('medTime').value = routine.time || '08:00';
                 document.getElementById('medStock').value = routine.stock !== undefined ? routine.stock : '';
                 document.getElementById('medNotes').value = routine.notes || '';
+
+                if (startDateInp) startDateInp.value = routine.startDate || selectedDate;
+                if (durationInp) durationInp.value = routine.durationDays || 3;
+
+                setDurationPreset(parseInt(routine.durationDays, 10) || 3);
+
+                const times = Array.isArray(routine.times) && routine.times.length > 0 ? routine.times : (routine.time ? [routine.time] : ['08:00', '14:00', '21:00']);
+                renderDoseTimeSlots(times);
+
+                document.querySelectorAll('.freq-chip').forEach(btn => {
+                    const f = parseInt(btn.getAttribute('data-freq'), 10);
+                    btn.classList.toggle('active', f === times.length);
+                });
 
                 const typeRadio = document.querySelector(`input[name="medType"][value="${routine.type}"]`);
                 if (typeRadio) typeRadio.checked = true;
@@ -697,26 +989,21 @@ window.MediCareUI = (function () {
             if (cloneNoticeBanner) cloneNoticeBanner.classList.add('hidden');
 
             const addTitle = t('modal_add_title', 'নতুন ঔষধ / ইনজেকশন যোগ করুন');
-            if (modalTitleText) {
-                modalTitleText.textContent = addTitle;
-            } else if (modalTitle) {
-                modalTitle.textContent = addTitle;
-            }
-
+            if (modalTitleText) modalTitleText.textContent = addTitle;
             if (modalIcon) {
                 modalIcon.setAttribute('data-lucide', 'pill');
                 modalIcon.className = 'w-5 h-5 text-[#0284c7] dark:text-sky-400';
             }
+            if (submitBtnText) submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
 
-            if (submitBtnText) {
-                submitBtnText.textContent = t('btn_save', 'সংরক্ষণ করুন');
-            }
+            if (startDateInp) startDateInp.value = selectedDate || window.MediCareStore.getTodayDateStr();
+            if (durationInp) durationInp.value = 3;
 
-            const now = new Date();
-            const nextHour = String((now.getHours() + 1) % 24).padStart(2, '0') + ':00';
-            const timeInput = document.getElementById('medTime');
-            if (timeInput) timeInput.value = nextHour;
+            setDurationPreset(3);
+            setFrequencyPreset(3); // default 3 times per day (8:00, 14:00, 21:00)
         }
+
+        onCourseConfigChanged();
 
         if (window.lucide) window.lucide.createIcons();
 
@@ -736,6 +1023,7 @@ window.MediCareUI = (function () {
     function cloneRoutine(id) {
         openModal(id, true);
     }
+
 
     // ==========================================
     // DELETE CONFIRMATION DIALOG
@@ -827,7 +1115,17 @@ window.MediCareUI = (function () {
         setFont,
         cycleFont,
         switchTab,
+        renderDateStrip,
+        selectDate,
+        scrollDateStrip,
+        goToToday,
         renderRoutines,
+        setDurationPreset,
+        setFrequencyPreset,
+        renderDoseTimeSlots,
+        addCustomTimeSlot,
+        removeCustomTimeSlot,
+        onCourseConfigChanged,
         renderHistoryView,
         changeHistoryPage,
         clearHistoryLogsPrompt,
@@ -865,3 +1163,7 @@ window.changeHistoryPage = window.MediCareUI.changeHistoryPage;
 window.clearHistoryLogsPrompt = window.MediCareUI.clearHistoryLogsPrompt;
 window.closeClearHistoryModal = window.MediCareUI.closeClearHistoryModal;
 window.executeClearHistoryLogs = window.MediCareUI.executeClearHistoryLogs;
+window.selectDate = window.MediCareUI.selectDate;
+window.scrollDateStrip = window.MediCareUI.scrollDateStrip;
+window.goToToday = window.MediCareUI.goToToday;
+

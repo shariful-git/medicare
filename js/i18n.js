@@ -222,7 +222,34 @@ window.MediCareI18n = (function () {
             toast_demo_login: 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!',
             toast_logged_out: 'আপনি সফলভাবে লগআউট হয়েছেন।',
             toast_db_downloaded: 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!',
-            btn_demo_login: '১-ক্লিকে ডেমো লগইন (demo / 123456)'
+            btn_demo_login: '১-ক্লিকে ডেমো লগইন (demo / 123456)',
+
+            // Date Strip & Course Scheduling
+            date_strip_title: 'তারিখ নির্বাচন',
+            btn_today: 'আজকের দিন',
+            field_start_date: 'কোর্স শুরুর তারিখ *',
+            field_duration: 'সেবনের মেয়াদ (দিন) *',
+            field_frequency: 'প্রতিদিন কতবার সেবন করবেন? *',
+            days_unit: 'দিন',
+            freq_1: '১ বার (সকাল)',
+            freq_2: '২ বার (সকাল ও রাত)',
+            freq_3: '৩ বার (সকাল, দুপুর ও রাত)',
+            freq_4: '৪ বার (সকাল, দুপুর, সন্ধ্যা ও রাত)',
+            freq_custom: 'কাস্টম সময়',
+            dose_times_title: 'প্রতিটি ডোজের নির্ধারিত সময়',
+            dose_slot_morning: 'সকাল',
+            dose_slot_noon: 'দুপুর',
+            dose_slot_evening: 'সন্ধ্যা',
+            dose_slot_night: 'রাত',
+            dose_slot_custom: 'ডোজ',
+            btn_add_time_slot: '+ নতুন সময় যোগ করুন',
+            course_summary_prefix: 'কোর্সের পরিকল্পনা:',
+            course_day_badge: 'কোর্সের',
+            course_day_suffix: 'তম দিন',
+            course_total_doses: 'মোট ডোজ:',
+            course_completed_status: 'কোর্স সম্পন্ন হয়েছে',
+            toast_dose_taken: 'ডোজ সেবন সম্পন্ন হয়েছে!',
+            toast_dose_undo: 'ডোজ সেবন আনডু করা হয়েছে'
         },
 
         en: {
@@ -438,7 +465,34 @@ window.MediCareI18n = (function () {
             toast_demo_login: 'Entered Demo Account successfully!',
             toast_logged_out: 'Signed out successfully.',
             toast_db_downloaded: 'medicare.sqlite file downloaded successfully!',
-            btn_demo_login: '1-Click Demo Login (demo / 123456)'
+            btn_demo_login: '1-Click Demo Login (demo / 123456)',
+
+            // Date Strip & Course Scheduling
+            date_strip_title: 'Select Date',
+            btn_today: 'Today',
+            field_start_date: 'Course Start Date *',
+            field_duration: 'Course Duration (Days) *',
+            field_frequency: 'Times per day? *',
+            days_unit: 'days',
+            freq_1: 'Once (Morning)',
+            freq_2: 'Twice (Morning & Night)',
+            freq_3: '3 Times (Morning, Noon & Night)',
+            freq_4: '4 Times (Morning, Noon, Evening & Night)',
+            freq_custom: 'Custom Times',
+            dose_times_title: 'Scheduled Dose Times',
+            dose_slot_morning: 'Morning',
+            dose_slot_noon: 'Noon',
+            dose_slot_evening: 'Evening',
+            dose_slot_night: 'Night',
+            dose_slot_custom: 'Dose',
+            btn_add_time_slot: '+ Add Custom Time',
+            course_summary_prefix: 'Course Plan:',
+            course_day_badge: 'Day',
+            course_day_suffix: 'of Course',
+            course_total_doses: 'Total Doses:',
+            course_completed_status: 'Course Finished',
+            toast_dose_taken: 'Dose marked as taken!',
+            toast_dose_undo: 'Dose intake undone'
         }
     };
 
@@ -517,6 +571,34 @@ window.MediCareI18n = (function () {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         return dateObj.toLocaleDateString(locale, options);
     }
+
+    function getDayShortName(dateObj) {
+        if (!dateObj) return '';
+        if (currentLang === 'bn') {
+            const bnDays = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি'];
+            return bnDays[dateObj.getDay()];
+        }
+        const enDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        return enDays[dateObj.getDay()];
+    }
+
+    function getMonthShortName(dateObj) {
+        if (!dateObj) return '';
+        if (currentLang === 'bn') {
+            const bnMonths = ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
+            return bnMonths[dateObj.getMonth()];
+        }
+        const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return enMonths[dateObj.getMonth()];
+    }
+
+    function formatDateShort(dateObj) {
+        if (!dateObj) return '';
+        const day = formatNumber(dateObj.getDate());
+        const month = getMonthShortName(dateObj);
+        return `${day} ${month}`;
+    }
+
 
     function getTimeOfDayBadge(timeStr) {
         if (!timeStr) return '';
@@ -612,6 +694,9 @@ window.MediCareI18n = (function () {
         t,
         formatTime,
         formatDate,
+        formatDateShort,
+        getDayShortName,
+        getMonthShortName,
         formatNumber,
         getTimeOfDayBadge,
         getGreetingText,

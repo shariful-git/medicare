@@ -278,3 +278,182 @@ body {
         display: none !important;
     }
 }
+
+/* ==========================================================================
+   Horizontal Date Strip & Course Scheduling Controls
+   ========================================================================== */
+
+.date-strip-wrapper {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+}
+
+.dark .date-strip-wrapper {
+    background: #0f172a;
+    border-color: #334155;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.date-strip-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 2px;
+}
+
+.date-strip-scroll::-webkit-scrollbar {
+    display: none;
+}
+.date-strip-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.date-strip-card {
+    flex: 0 0 auto;
+    min-width: 66px;
+    scroll-snap-align: center;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    border-radius: 6px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    user-select: none;
+}
+
+.dark .date-strip-card {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+.date-strip-card:hover {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    transform: translateY(-1px);
+}
+
+.dark .date-strip-card:hover {
+    border-color: #38bdf8;
+    background: #0f2744;
+}
+
+.date-strip-card.active {
+    background: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.45);
+    transform: translateY(-2px);
+}
+
+.dark .date-strip-card.active {
+    background: #0284c7 !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+}
+
+.date-strip-card.is-today:not(.active) {
+    border-color: #0284c7;
+    background: #f8fafc;
+}
+
+.dark .date-strip-card.is-today:not(.active) {
+    border-color: #38bdf8;
+    background: #1e293b;
+}
+
+/* Dots on Date Strip */
+.date-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    display: inline-block;
+}
+
+.date-dot.dot-pending {
+    background-color: #0284c7;
+}
+
+.date-dot.dot-completed {
+    background-color: #10b981;
+}
+
+.date-strip-card.active .date-dot {
+    background-color: #ffffff !important;
+}
+
+/* Preset Duration & Frequency Selector Pills */
+.choice-pill {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.dark .choice-pill {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+.choice-pill:hover {
+    border-color: #0284c7;
+    color: #0284c7;
+}
+
+.dark .choice-pill:hover {
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.choice-pill.active {
+    background: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
+
+.dark .choice-pill.active {
+    background: #0284c7 !important;
+    border-color: #38bdf8 !important;
+    color: #ffffff !important;
+}
+
+/* Dose Time Slot Box in Modal */
+.dose-time-row {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition: all 0.15s ease;
+}
+
+.dark .dose-time-row {
+    background: #0b1324;
+    border-color: #1e293b;
+}
+
+.dose-time-row:hover {
+    border-color: #94a3b8;
+}
+

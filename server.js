@@ -116,9 +116,20 @@ function initTablesSqlite3() {
                 taken_today INTEGER DEFAULT 0,
                 last_taken_date TEXT,
                 created_at TEXT NOT NULL,
+                start_date TEXT DEFAULT '',
+                duration_days INTEGER DEFAULT 1,
+                end_date TEXT DEFAULT '',
+                frequency INTEGER DEFAULT 1,
+                times_json TEXT DEFAULT '',
+                taken_history TEXT DEFAULT '{}',
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         `);
+
+        // Graceful column migration for sqlite3
+        ['start_date', 'duration_days', 'end_date', 'frequency', 'times_json', 'taken_history'].forEach(col => {
+            db.run(`ALTER TABLE routines ADD COLUMN ${col} TEXT DEFAULT '';`, () => {});
+        });
 
         db.run(`
             CREATE TABLE IF NOT EXISTS history_logs (
@@ -365,27 +376,47 @@ app.get('/api/routines', authMiddleware, (req, res) => {
     if (dbDriver === 'sqlite3') {
         db.all('SELECT * FROM routines WHERE user_id = ? ORDER BY time ASC', [req.userId], (err, rows) => {
             if (err) return res.status(500).json({ success: false, error: err.message });
-            const list = (rows || []).map(r => ({
-                id: r.id,
-                name: r.name,
-                type: r.type,
-                dosage: r.dosage,
-                meal: r.meal,
-                time: r.time,
-                stock: r.stock,
-                notes: r.notes,
-                takenToday: Boolean(r.taken_today),
-                lastTakenDate: r.last_taken_date,
-                createdAt: r.created_at
-            }));
+            const list = (rows || []).map(r => {
+                let times = [];
+                try { times = r.times_json ? JSON.parse(r.times_json) : [r.time]; } catch (e) { times = [r.time]; }
+                let takenHistory = {};
+                try { takenHistory = r.taken_history ? JSON.parse(r.taken_history) : {}; } catch (e) { takenHistory = {}; }
+                return {
+                    id: r.id,
+                    name: r.name,
+                    type: r.type,
+                    dosage: r.dosage,
+                    meal: r.meal,
+                    time: r.time,
+                    stock: r.stock,
+                    notes: r.notes,
+                    takenToday: Boolean(r.taken_today),
+                    lastTakenDate: r.last_taken_date,
+                    createdAt: r.created_at,
+                    startDate: r.start_date || '',
+                    durationDays: parseInt(r.duration_days, 10) || 1,
+                    endDate: r.end_date || '',
+                    frequency: parseInt(r.frequency, 10) || times.length,
+                    times: times,
+                    takenHistory: takenHistory
+                };
+            });
             res.json({ success: true, routines: list });
         });
     } else if (dbDriver === 'node:sqlite') {
         const rows = db.prepare('SELECT * FROM routines WHERE user_id = ? ORDER BY time ASC').all(req.userId);
-        const list = (rows || []).map(r => ({
-            ...r,
-            takenToday: Boolean(r.taken_today)
-        }));
+        const list = (rows || []).map(r => {
+            let times = [];
+            try { times = r.times_json ? JSON.parse(r.times_json) : [r.time]; } catch (e) { times = [r.time]; }
+            let takenHistory = {};
+            try { takenHistory = r.taken_history ? JSON.parse(r.taken_history) : {}; } catch (e) { takenHistory = {}; }
+            return {
+                ...r,
+                takenToday: Boolean(r.taken_today),
+                times,
+                takenHistory
+            };
+        });
         res.json({ success: true, routines: list });
     } else {
         const list = fallbackMemoryDb.routines.filter(r => r.user_id === req.userId);
@@ -395,15 +426,19 @@ app.get('/api/routines', authMiddleware, (req, res) => {
 
 // Create Routine
 app.post('/api/routines', authMiddleware, (req, res) => {
-    const { id, name, type, dosage, meal, time, stock, notes } = req.body;
+    const { id, name, type, dosage, meal, time, stock, notes, startDate, durationDays, endDate, frequency, times, takenHistory } = req.body;
     const routineId = id || 'med-' + Date.now();
     const createdAt = new Date().toISOString();
+    const timesArr = Array.isArray(times) ? times : (time ? [time] : ['08:00']);
+    const timesJson = JSON.stringify(timesArr);
+    const historyJson = JSON.stringify(takenHistory || {});
+    const primaryTime = time || timesArr[0] || '08:00';
 
     if (dbDriver === 'sqlite3') {
         db.run(
-            `INSERT INTO routines (id, user_id, name, type, dosage, meal, time, stock, notes, taken_today, last_taken_date, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '', ?)`,
-            [routineId, req.userId, name, type || 'tablet', dosage, meal, time, stock || 0, notes || '', createdAt],
+            `INSERT INTO routines (id, user_id, name, type, dosage, meal, time, stock, notes, taken_today, last_taken_date, created_at, start_date, duration_days, end_date, frequency, times_json, taken_history)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '', ?, ?, ?, ?, ?, ?, ?)`,
+            [routineId, req.userId, name, type || 'tablet', dosage, meal, primaryTime, stock || 0, notes || '', createdAt, startDate || '', durationDays || 1, endDate || '', frequency || timesArr.length, timesJson, historyJson],
             function (err) {
                 if (err) return res.status(500).json({ success: false, error: err.message });
                 // Log action in history
@@ -424,12 +459,18 @@ app.post('/api/routines', authMiddleware, (req, res) => {
             type: type || 'tablet',
             dosage,
             meal,
-            time,
+            time: primaryTime,
             stock: stock || 0,
             notes: notes || '',
             takenToday: false,
             lastTakenDate: '',
-            createdAt
+            createdAt,
+            startDate: startDate || '',
+            durationDays: durationDays || 1,
+            endDate: endDate || '',
+            frequency: frequency || timesArr.length,
+            times: timesArr,
+            takenHistory: takenHistory || {}
         };
         fallbackMemoryDb.routines.unshift(newRoutine);
         saveFallbackDb();
@@ -440,13 +481,17 @@ app.post('/api/routines', authMiddleware, (req, res) => {
 // Update Routine
 app.put('/api/routines/:id', authMiddleware, (req, res) => {
     const { id } = req.params;
-    const { name, type, dosage, meal, time, stock, notes } = req.body;
+    const { name, type, dosage, meal, time, stock, notes, startDate, durationDays, endDate, frequency, times, takenHistory } = req.body;
+    const timesArr = Array.isArray(times) ? times : (time ? [time] : ['08:00']);
+    const timesJson = JSON.stringify(timesArr);
+    const historyJson = JSON.stringify(takenHistory || {});
+    const primaryTime = time || timesArr[0] || '08:00';
 
     if (dbDriver === 'sqlite3') {
         db.run(
-            `UPDATE routines SET name = ?, type = ?, dosage = ?, meal = ?, time = ?, stock = ?, notes = ?
+            `UPDATE routines SET name = ?, type = ?, dosage = ?, meal = ?, time = ?, stock = ?, notes = ?, start_date = ?, duration_days = ?, end_date = ?, frequency = ?, times_json = ?, taken_history = ?
              WHERE id = ? AND user_id = ?`,
-            [name, type, dosage, meal, time, stock || 0, notes || '', id, req.userId],
+            [name, type, dosage, meal, primaryTime, stock || 0, notes || '', startDate || '', durationDays || 1, endDate || '', frequency || timesArr.length, timesJson, historyJson, id, req.userId],
             function (err) {
                 if (err) return res.status(500).json({ success: false, error: err.message });
                 res.json({ success: true });
@@ -455,7 +500,21 @@ app.put('/api/routines/:id', authMiddleware, (req, res) => {
     } else {
         const item = fallbackMemoryDb.routines.find(r => r.id === id && r.user_id === req.userId);
         if (item) {
-            Object.assign(item, { name, type, dosage, meal, time, stock, notes });
+            Object.assign(item, {
+                name,
+                type,
+                dosage,
+                meal,
+                time: primaryTime,
+                stock,
+                notes,
+                startDate: startDate || item.startDate,
+                durationDays: durationDays || item.durationDays,
+                endDate: endDate || item.endDate,
+                frequency: frequency || item.frequency,
+                times: timesArr,
+                takenHistory: takenHistory || item.takenHistory
+            });
             saveFallbackDb();
         }
         res.json({ success: true });

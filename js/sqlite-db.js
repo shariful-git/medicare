@@ -57,6 +57,15 @@ window.MediCareSQLite = (function () {
                 db.run(schema);
             }
 
+            // Non-breaking column migrations for existing databases
+            ['startDate', 'durationDays', 'endDate', 'frequency', 'timesJson', 'takenHistoryJson'].forEach(col => {
+                try {
+                    db.run(`ALTER TABLE routines ADD COLUMN ${col} TEXT DEFAULT '';`);
+                } catch (e) {
+                    // Column already exists, safe to ignore
+                }
+            });
+
             isReady = true;
             persist();
             console.log('SQLite WebAssembly Database initialized successfully.');
@@ -112,11 +121,13 @@ window.MediCareSQLite = (function () {
         try {
             db.run('DELETE FROM routines WHERE user_id = ?;', [targetUser]);
             const stmt = db.prepare(`
-                INSERT INTO routines (id, user_id, name, type, dosage, meal, time, stock, notes, takenToday, lastTakenDate, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                INSERT INTO routines (id, user_id, name, type, dosage, meal, time, stock, notes, takenToday, lastTakenDate, createdAt, startDate, durationDays, endDate, frequency, timesJson, takenHistoryJson)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `);
 
             routines.forEach(r => {
+                const timesJson = JSON.stringify(Array.isArray(r.times) ? r.times : (r.time ? [r.time] : ['08:00']));
+                const historyJson = JSON.stringify(r.takenHistory && typeof r.takenHistory === 'object' ? r.takenHistory : {});
                 stmt.run([
                     r.id,
                     targetUser,
@@ -124,12 +135,18 @@ window.MediCareSQLite = (function () {
                     r.type,
                     r.dosage,
                     r.meal,
-                    r.time,
+                    r.time || (Array.isArray(r.times) && r.times[0] ? r.times[0] : '08:00'),
                     r.stock !== undefined && r.stock !== '' ? Number(r.stock) : 0,
                     r.notes || '',
                     r.takenToday ? 1 : 0,
                     r.lastTakenDate || '',
-                    r.createdAt || new Date().toISOString()
+                    r.createdAt || new Date().toISOString(),
+                    r.startDate || '',
+                    parseInt(r.durationDays, 10) || 1,
+                    r.endDate || '',
+                    parseInt(r.frequency, 10) || (Array.isArray(r.times) ? r.times.length : 1),
+                    timesJson,
+                    historyJson
                 ]);
             });
             stmt.free();
@@ -152,6 +169,18 @@ window.MediCareSQLite = (function () {
             while (stmt.step()) {
                 const row = stmt.getAsObject();
                 row.takenToday = Boolean(row.takenToday);
+                if (row.timesJson) {
+                    try { row.times = JSON.parse(row.timesJson); } catch (e) { row.times = [row.time]; }
+                } else {
+                    row.times = row.time ? [row.time] : ['08:00'];
+                }
+                if (row.takenHistoryJson) {
+                    try { row.takenHistory = JSON.parse(row.takenHistoryJson); } catch (e) { row.takenHistory = {}; }
+                } else {
+                    row.takenHistory = {};
+                }
+                row.durationDays = parseInt(row.durationDays, 10) || 1;
+                row.frequency = parseInt(row.frequency, 10) || (Array.isArray(row.times) ? row.times.length : 1);
                 list.push(row);
             }
             stmt.free();
