@@ -236,10 +236,21 @@ window.MediCareUI = (function () {
 
             let dotHtml = '';
             if (status.hasMeds) {
+                const totalFmt = window.MediCareI18n ? window.MediCareI18n.formatNumber(status.total) : status.total;
+                const takenFmt = window.MediCareI18n ? window.MediCareI18n.formatNumber(status.taken) : status.taken;
+                const pendingFmt = window.MediCareI18n ? window.MediCareI18n.formatNumber(status.total - status.taken) : (status.total - status.taken);
+
                 if (status.allTaken) {
-                    dotHtml = `<span class="date-dot dot-completed" title="${t('stat_taken', 'সম্পন্ন')} (${status.taken}/${status.total})"></span>`;
+                    const titleTaken = t('date_strip_all_taken', `সকল ডোজ সম্পন্ন (${takenFmt}/${totalFmt})`)
+                        .replace('{taken}', takenFmt)
+                        .replace('{total}', totalFmt);
+                    dotHtml = `<span class="date-dot dot-completed" title="${escapeHtml(titleTaken)}"></span>`;
                 } else {
-                    dotHtml = `<span class="date-dot dot-pending" title="${t('stat_pending', 'বাকি আছে')} (${status.total - status.taken}/${status.total})"></span>`;
+                    const titlePending = t('date_strip_pending', `${pendingFmt}টি ডোজ বাকি (${takenFmt}/${totalFmt})`)
+                        .replace('{pending}', pendingFmt)
+                        .replace('{taken}', takenFmt)
+                        .replace('{total}', totalFmt);
+                    dotHtml = `<span class="date-dot dot-pending" title="${escapeHtml(titlePending)}"></span>`;
                 }
             }
 
@@ -295,7 +306,9 @@ window.MediCareUI = (function () {
         const stats = window.MediCareStore.getStatsForDate(selectedDate);
         if (badgeEl) {
             const fmtNum = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
-            badgeEl.textContent = `${fmtNum(stats.total)}টি ডোজ (${fmtNum(stats.taken)}টি সম্পন্ন)`;
+            badgeEl.textContent = t('date_badge_stats', `${fmtNum(stats.total)}টি ডোজ (${fmtNum(stats.taken)}টি সম্পন্ন)`)
+                .replace('{total}', fmtNum(stats.total))
+                .replace('{taken}', fmtNum(stats.taken));
         }
     }
 
@@ -403,6 +416,11 @@ window.MediCareUI = (function () {
             const dayIndexFormatted = fmt(item.dayIndex);
             const durationFormatted = fmt(item.durationDays);
 
+            const courseDayText = t('course_day_label', `${durationFormatted} দিনের কোর্সের ${dayIndexFormatted}ম দিন`)
+                .replace('{duration}', durationFormatted)
+                .replace('{day}', dayIndexFormatted);
+            const formattedMeal = window.MediCareI18n ? window.MediCareI18n.formatMeal(item.meal) : item.meal;
+
             card.innerHTML = `
                 <div class="flex items-start gap-3 flex-1 min-w-0">
                     <div class="w-11 h-11 rounded-md flex items-center justify-center shrink-0 border ${
@@ -423,13 +441,13 @@ window.MediCareUI = (function () {
                                 ⏰ ${formatBengaliTime(item.time)}
                             </span>
                             <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-[#0284c7] dark:text-sky-300 border border-sky-200 dark:border-sky-800 font-mono">
-                                📅 ${durationFormatted} দিনের কোর্সের ${dayIndexFormatted}ম দিন
+                                📅 ${courseDayText}
                             </span>
                         </div>
                         <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 font-medium flex-wrap pt-0.5">
                             <span><b>${dosageLabel}</b> ${escapeHtml(item.dosage)}</span>
                             <span>•</span>
-                            <span><b>${mealLabel}</b> ${escapeHtml(item.meal)}</span>
+                            <span><b>${mealLabel}</b> ${escapeHtml(formattedMeal)}</span>
                             ${item.stock !== undefined && item.stock !== '' ? `
                                 <span>•</span>
                                 <span class="${isLowStock ? 'text-rose-600 dark:text-rose-400 font-bold low-stock-badge' : ''}">
@@ -785,7 +803,7 @@ window.MediCareUI = (function () {
                     <div class="space-y-1 min-w-0 flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
-                                ${escapeHtml(log.routine_name || 'ঔষধ')}
+                                ${escapeHtml(log.routine_name || t('fallback_med_name', 'ঔষধ'))}
                             </h3>
                             ${routine ? getTypeBadge(routine.type) : ''}
                             <span class="text-xs font-semibold px-2 py-0.5 rounded border ${actionInfo.badgeClass}">
@@ -799,7 +817,7 @@ window.MediCareUI = (function () {
                             ${routine ? `
                                 <span><b>${dosageLabel}</b> ${escapeHtml(routine.dosage)}</span>
                                 <span>•</span>
-                                <span><b>${mealLabel}</b> ${escapeHtml(routine.meal)}</span>
+                                <span><b>${mealLabel}</b> ${escapeHtml(window.MediCareI18n ? window.MediCareI18n.formatMeal(routine.meal) : routine.meal)}</span>
                             ` : `
                                 <span>${escapeHtml(actionInfo.label)}</span>
                             `}
@@ -958,7 +976,7 @@ window.MediCareUI = (function () {
                 <div class="flex items-center gap-2">
                     <input type="time" value="${timeVal || '08:00'}" required onchange="window.MediCareUI.onCourseConfigChanged()" class="dose-time-input px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-[#0284c7] outline-none">
                     ${timesList.length > 1 ? `
-                        <button type="button" onclick="window.MediCareUI.removeCustomTimeSlot(this)" title="মুছে ফেলুন" class="p-1.5 rounded hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition">
+                        <button type="button" onclick="window.MediCareUI.removeCustomTimeSlot(this)" title="${escapeHtml(t('btn_delete', 'মুছে ফেলুন'))}" class="p-1.5 rounded hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition">
                             <i data-lucide="x" class="w-3.5 h-3.5"></i>
                         </button>
                     ` : ''}
@@ -989,6 +1007,42 @@ window.MediCareUI = (function () {
         }
     }
 
+    function renderPresetChips() {
+        const durationContainer = document.getElementById('durationPresetContainer');
+        const freqContainer = document.getElementById('frequencyPresetContainer');
+        const isBn = !window.MediCareI18n || window.MediCareI18n.getLanguage() === 'bn';
+
+        if (durationContainer) {
+            const currentActiveDays = document.getElementById('medDurationDays')?.value || '3';
+            const durationPresets = [
+                { days: 1, label: isBn ? '১ দিন' : '1 Day' },
+                { days: 3, label: isBn ? '৩ দিন' : '3 Days' },
+                { days: 5, label: isBn ? '৫ দিন' : '5 Days' },
+                { days: 7, label: isBn ? '৭ দিন (১ সপ্তাহ)' : '7 Days (1 Week)' },
+                { days: 10, label: isBn ? '১০ দিন' : '10 Days' },
+                { days: 14, label: isBn ? '১৪ দিন (২ সপ্তাহ)' : '14 Days (2 Weeks)' },
+                { days: 30, label: isBn ? '৩০ দিন (১ মাস)' : '30 Days (1 Month)' }
+            ];
+            durationContainer.innerHTML = durationPresets.map(p => `
+                <button type="button" onclick="window.MediCareUI.setDurationPreset(${p.days})" data-days="${p.days}" class="choice-pill duration-chip ${String(p.days) === String(currentActiveDays) ? 'active' : ''}">${p.label}</button>
+            `).join('');
+        }
+
+        if (freqContainer) {
+            const activeFreqChip = freqContainer.querySelector('.freq-chip.active');
+            const activeFreq = activeFreqChip ? parseInt(activeFreqChip.getAttribute('data-freq'), 10) : 3;
+            const freqPresets = [
+                { freq: 1, label: isBn ? '১ বার (দিনে ১ বার)' : '1 Time (Once Daily)' },
+                { freq: 2, label: isBn ? '২ বার (সকাল ও রাত)' : '2 Times (Morning & Night)' },
+                { freq: 3, label: isBn ? '৩ বার (সকাল, দুপুর ও রাত)' : '3 Times (Morning, Noon & Night)' },
+                { freq: 4, label: isBn ? '৪ বার (৬ ঘণ্টা পর পর)' : '4 Times (Every 6 Hours)' }
+            ];
+            freqContainer.innerHTML = freqPresets.map(f => `
+                <button type="button" onclick="window.MediCareUI.setFrequencyPreset(${f.freq})" data-freq="${f.freq}" class="choice-pill freq-chip ${f.freq === activeFreq ? 'active' : ''}">${f.label}</button>
+            `).join('');
+        }
+    }
+
     function onCourseConfigChanged() {
         const startDateInp = document.getElementById('medStartDate');
         const durationInp = document.getElementById('medDurationDays');
@@ -1006,17 +1060,25 @@ window.MediCareUI = (function () {
         const totalDoses = duration * freqCount;
 
         const fmt = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
 
         if (rangeSummary) {
-            rangeSummary.textContent = `${fmt(duration)} দিন (${startDate} থেকে ${endDate})`;
+            rangeSummary.textContent = t('course_range_calc', `${fmt(duration)} দিন (${startDate} থেকে ${endDate})`)
+                .replace('{duration}', fmt(duration))
+                .replace('{start}', startDate)
+                .replace('{end}', endDate);
         }
 
         if (summaryText) {
-            summaryText.textContent = `${fmt(duration)} দিনের কোর্স • প্রতিদিন ${fmt(freqCount)} বার • সর্বমোট ${fmt(totalDoses)}টি ডোজ`;
+            summaryText.textContent = t('course_summary_calc', `${fmt(duration)} দিনের কোর্স • প্রতিদিন ${fmt(freqCount)} বার • সর্বমোট ${fmt(totalDoses)}টি ডোজ`)
+                .replace('{duration}', fmt(duration))
+                .replace('{freq}', fmt(freqCount))
+                .replace('{total}', fmt(totalDoses));
         }
 
         if (suggestedStockTag) {
-            suggestedStockTag.textContent = `মোট প্রয়োজন: ${fmt(totalDoses)}টি`;
+            suggestedStockTag.textContent = t('suggested_stock_calc', `মোট প্রয়োজন: ${fmt(totalDoses)}টি`)
+                .replace('{total}', fmt(totalDoses));
         }
 
         // Auto-suggest stock if empty
@@ -1042,6 +1104,8 @@ window.MediCareUI = (function () {
         if (form) form.reset();
 
         const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+
+        renderPresetChips();
 
         const selectedDate = window.MediCareStore.getSelectedDate();
         const startDateInp = document.getElementById('medStartDate');
@@ -1082,7 +1146,34 @@ window.MediCareUI = (function () {
 
                 document.getElementById('medName').value = routine.name || '';
                 document.getElementById('medDosage').value = routine.dosage || '';
-                document.getElementById('medMeal').value = routine.meal || 'খাবারের পরে (After Meal)';
+                
+                const mealSelect = document.getElementById('medMeal');
+                if (mealSelect) {
+                    const rawMeal = routine.meal || '';
+                    let found = false;
+                    for (let opt of mealSelect.options) {
+                        if (opt.value === rawMeal || opt.text === rawMeal) {
+                            mealSelect.value = opt.value;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && rawMeal) {
+                        const lower = rawMeal.toLowerCase();
+                        for (let opt of mealSelect.options) {
+                            const optVal = opt.value.toLowerCase();
+                            if ((lower.includes('before') && optVal.includes('before')) ||
+                                (lower.includes('after') && optVal.includes('after')) ||
+                                (lower.includes('with') && optVal.includes('with')) ||
+                                (lower.includes('empty') && optVal.includes('empty')) ||
+                                (lower.includes('anytime') && (optVal.includes('anytime') || optVal.includes('যেকোনো')))) {
+                                mealSelect.value = opt.value;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 document.getElementById('medStock').value = routine.stock !== undefined ? routine.stock : '';
                 document.getElementById('medNotes').value = routine.notes || '';
 
@@ -1198,7 +1289,10 @@ window.MediCareUI = (function () {
         const takeBtn = document.getElementById('alarmTakeBtn');
 
         if (nameEl) nameEl.textContent = item.name;
-        if (detailsEl) detailsEl.textContent = `${item.dosage} • ${item.meal}`;
+        if (detailsEl) {
+            const mealFmt = window.MediCareI18n ? window.MediCareI18n.formatMeal(item.meal) : item.meal;
+            detailsEl.textContent = `${item.dosage} • ${mealFmt}`;
+        }
         if (timeEl) {
             const prefix = window.MediCareI18n ? window.MediCareI18n.t('alarm_time_prefix') : 'নির্ধারিত সময়:';
             timeEl.textContent = `${prefix} ${formatBengaliTime(item.time)}`;
@@ -1242,6 +1336,7 @@ window.MediCareUI = (function () {
         renderRoutines,
         setDurationPreset,
         setFrequencyPreset,
+        renderPresetChips,
         renderDoseTimeSlots,
         addCustomTimeSlot,
         removeCustomTimeSlot,

@@ -73,9 +73,10 @@ window.MediCareTools = (function () {
         const goalPre = window.MediCareI18n ? window.MediCareI18n.t('water_goal_prefix', 'মিলি (লক্ষ্য:') : 'মিলি (লক্ষ্য:';
         const goalSuf = window.MediCareI18n ? window.MediCareI18n.t('water_goal_suffix', 'মিলি)') : 'মিলি)';
 
-        if (countEl) countEl.textContent = `${glasses} / ${target}`;
-        if (textEl) textEl.textContent = `${percent}%`;
-        if (mlEl) mlEl.textContent = `${glasses * 250} ${goalPre} ${target * 250} ${goalSuf}`;
+        const fmtNum = (n) => window.MediCareI18n ? window.MediCareI18n.formatNumber(n) : n;
+        if (countEl) countEl.textContent = `${fmtNum(glasses)} / ${fmtNum(target)}`;
+        if (textEl) textEl.textContent = `${fmtNum(percent)}%`;
+        if (mlEl) mlEl.textContent = `${fmtNum(glasses * 250)} ${goalPre} ${fmtNum(target * 250)} ${goalSuf}`;
         if (fillEl) fillEl.style.height = `${percent}%`;
     }
 
@@ -148,13 +149,14 @@ window.MediCareTools = (function () {
                             const timesList = (Array.isArray(r.times) && r.times.length > 0) ? r.times : [r.time || '08:00'];
                             const timesFormatted = timesList.map(t => window.MediCareI18n ? window.MediCareI18n.formatTime(t) : t).join(', ');
                             const durationStr = r.durationDays ? `${r.durationDays} ${isBn ? 'দিন' : 'days'}` : '-';
+                            const mealText = window.MediCareI18n ? window.MediCareI18n.formatMeal(r.meal) : r.meal;
                             return `
                                 <tr>
                                     <td>${i + 1}</td>
                                     <td><b>${escapeHtml(r.name)}</b></td>
                                     <td><span class="badge">${escapeHtml(r.type)}</span></td>
                                     <td>${escapeHtml(r.dosage)}</td>
-                                    <td>${escapeHtml(r.meal)}</td>
+                                    <td>${escapeHtml(mealText)}</td>
                                     <td><b>${escapeHtml(durationStr)}</b></td>
                                     <td><b>${timesFormatted}</b></td>
                                     <td>${escapeHtml(r.notes || '-')}</td>
@@ -188,8 +190,10 @@ window.MediCareTools = (function () {
         const query = input.value.trim();
         if (!query) return;
 
+        const isEn = window.MediCareI18n && window.MediCareI18n.getLanguage() === 'en';
+
         if (!window.MediCareSQLite || !window.MediCareSQLite.isReady()) {
-            output.innerHTML = `<div class="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200">SQLite ডাটাবেজ এখনো প্রস্তুত হয়নি। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।</div>`;
+            output.innerHTML = `<div class="p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200">${isEn ? 'SQLite database is not ready yet. Please refresh the page.' : 'SQLite ডাটাবেজ এখনো প্রস্তুত হয়নি। অনুগ্রহ করে পেজটি রিফ্রেশ করুন।'}</div>`;
             return;
         }
 
@@ -230,7 +234,7 @@ window.MediCareTools = (function () {
                     </tbody>
                 </table>
             </div>
-            <p class="text-[11px] text-slate-400 mt-2">মোট রেজাল্ট: ${rows.length} টি রো</p>
+            <p class="text-[11px] text-slate-400 mt-2">${isEn ? `Total Results: ${rows.length} rows` : `মোট রেজাল্ট: ${rows.length} টি রো`}</p>
         `;
 
         output.innerHTML = tableHtml;

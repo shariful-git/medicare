@@ -233,12 +233,39 @@ window.MediCareI18n = (function () {
             toast_db_downloaded: 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!',
             btn_demo_login: '১-ক্লিকে ডেমো লগইন (demo / 123456)',
 
+            // Tooltips & Accessibility
+            tooltip_lang: 'ভাষা পরিবর্তন (বাং / EN)',
+            tooltip_theme: 'থিম পরিবর্তন করুন',
+            tooltip_sound: 'সাউন্ড অন/অফ করুন',
+            tooltip_today: 'আজকের তারিখে ফিরে যান',
+            tooltip_prev_dates: 'আগের দিনসমূহ',
+            tooltip_next_dates: 'পরের দিনসমূহ',
+            tooltip_view_mode: 'প্রদর্শন ভিউ',
+            auth_modal_sub: 'ব্যক্তিগত ও নিরাপদ ঔষধ ট্র্যাকিং',
+            auth_demo_or: 'অথবা দ্রুত পরীক্ষা করার জন্য:',
+            auth_err_required: 'অনুগ্রহ করে ইউজারনেম এবং পাসওয়ার্ড পূরণ করুন।',
+            auth_err_fullname: 'অনুগ্রহ করে আপনার পুরো নাম দিন।',
+            auth_err_failed: 'লগইন ব্যর্থ হয়েছে।',
+            auth_err_username_exists: 'এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হয়েছে।',
+            auth_err_invalid_creds: 'ভুল ইউজারনেম বা পাসওয়ার্ড। ডেমো একাউন্ট: demo / 123456',
+
             // Date Strip & Course Scheduling
             date_strip_title: 'তারিখ নির্বাচন',
             btn_today: 'আজকের দিন',
             field_start_date: 'কোর্স শুরুর তারিখ *',
             field_duration: 'সেবনের মেয়াদ (দিন) *',
             field_frequency: 'প্রতিদিন কতবার সেবন করবেন? *',
+            duration_preset_label: 'সহজে মেয়াদের দিন নির্বাচন করুন:',
+            course_day_label: '{duration} দিনের কোর্সের {day}ম দিন',
+            date_badge_stats: '{total}টি ডোজ ({taken}টি সম্পন্ন)',
+            date_strip_all_taken: 'সকল ডোজ সম্পন্ন ({taken}/{total})',
+            date_strip_pending: '{pending}টি ডোজ বাকি ({taken}/{total})',
+            course_summary_calc: '{duration} দিনের কোর্স • প্রতিদিন {freq} বার • সর্বমোট {total}টি ডোজ',
+            course_range_calc: '{duration} দিন ({start} থেকে {end})',
+            suggested_stock_calc: 'মোট প্রয়োজন: {total}টি',
+            status_completed: 'সম্পন্ন',
+            status_pending: 'বাকি',
+            fallback_med_name: 'ঔষধ',
             days_unit: 'দিন',
             freq_1: '১ বার (সকাল)',
             freq_2: '২ বার (সকাল ও রাত)',
@@ -246,10 +273,10 @@ window.MediCareI18n = (function () {
             freq_4: '৪ বার (সকাল, দুপুর, সন্ধ্যা ও রাত)',
             freq_custom: 'কাস্টম সময়',
             dose_times_title: 'প্রতিটি ডোজের নির্ধারিত সময়',
-            dose_slot_morning: 'সকাল',
-            dose_slot_noon: 'দুপুর',
-            dose_slot_evening: 'সন্ধ্যা',
-            dose_slot_night: 'রাত',
+            dose_slot_morning: 'সকালের ডোজ',
+            dose_slot_noon: 'দুপুরের ডোজ',
+            dose_slot_evening: 'সন্ধ্যার ডোজ',
+            dose_slot_night: 'রাতের ডোজ',
             dose_slot_custom: 'ডোজ',
             btn_add_time_slot: '+ নতুন সময় যোগ করুন',
             course_summary_prefix: 'কোর্সের পরিকল্পনা:',
@@ -258,7 +285,12 @@ window.MediCareI18n = (function () {
             course_total_doses: 'মোট ডোজ:',
             course_completed_status: 'কোর্স সম্পন্ন হয়েছে',
             toast_dose_taken: 'ডোজ সেবন সম্পন্ন হয়েছে!',
-            toast_dose_undo: 'ডোজ সেবন আনডু করা হয়েছে'
+            toast_dose_undo: 'ডোজ সেবন আনডু করা হয়েছে',
+            unit_med: 'টি ঔষধ',
+            group_all_taken: 'সকল ডোজ সম্পন্ন ({taken}/{total})',
+            group_pending: '{pending}টি বাকি',
+            group_mark_all: 'সবগুলো গ্রহণ',
+            toast_group_taken: 'উক্ত সময়ের সকল ঔষধ সেবন সম্পন্ন হয়েছে!'
         },
 
         en: {
@@ -469,6 +501,7 @@ window.MediCareI18n = (function () {
             auth_field_password: 'Password',
             auth_placeholder_password: 'Enter password...',
             btn_login_submit: 'Sign In',
+            btn_register_submit: 'Create Account',
             safety_guide_title: 'Clinical Medication & Health Safety Guidelines',
             safety_guide_desc: 'Essential best practices for optimal medication effectiveness and health safety.',
             guide_rule1_title: 'Adhere to Fixed Schedule',
@@ -485,12 +518,39 @@ window.MediCareI18n = (function () {
             toast_db_downloaded: 'medicare.sqlite file downloaded successfully!',
             btn_demo_login: '1-Click Demo Login (demo / 123456)',
 
+            // Tooltips & Accessibility
+            tooltip_lang: 'Switch Language (EN / বাং)',
+            tooltip_theme: 'Toggle Theme',
+            tooltip_sound: 'Toggle Sound Alert',
+            tooltip_today: 'Return to Today',
+            tooltip_prev_dates: 'Previous Dates',
+            tooltip_next_dates: 'Next Dates',
+            tooltip_view_mode: 'Display View',
+            auth_modal_sub: 'Personal & Secure Medication Tracking',
+            auth_demo_or: 'Or for quick testing:',
+            auth_err_required: 'Please enter username and password.',
+            auth_err_fullname: 'Please enter your full name.',
+            auth_err_failed: 'Sign in failed.',
+            auth_err_username_exists: 'This username is already taken.',
+            auth_err_invalid_creds: 'Invalid username or password. Demo account: demo / 123456',
+
             // Date Strip & Course Scheduling
             date_strip_title: 'Select Date',
             btn_today: 'Today',
             field_start_date: 'Course Start Date *',
             field_duration: 'Course Duration (Days) *',
             field_frequency: 'Times per day? *',
+            duration_preset_label: 'Quick Select Duration:',
+            course_day_label: 'Day {day} of {duration} days',
+            date_badge_stats: '{total} Doses ({taken} completed)',
+            date_strip_all_taken: 'All doses completed ({taken}/{total})',
+            date_strip_pending: '{pending} doses pending ({taken}/{total})',
+            course_summary_calc: '{duration} Days Course • {freq} times daily • Total {total} doses',
+            course_range_calc: '{duration} Days ({start} to {end})',
+            suggested_stock_calc: 'Total Needed: {total}',
+            status_completed: 'Completed',
+            status_pending: 'Pending',
+            fallback_med_name: 'Medicine',
             days_unit: 'days',
             freq_1: 'Once (Morning)',
             freq_2: 'Twice (Morning & Night)',
@@ -498,10 +558,10 @@ window.MediCareI18n = (function () {
             freq_4: '4 Times (Morning, Noon, Evening & Night)',
             freq_custom: 'Custom Times',
             dose_times_title: 'Scheduled Dose Times',
-            dose_slot_morning: 'Morning',
-            dose_slot_noon: 'Noon',
-            dose_slot_evening: 'Evening',
-            dose_slot_night: 'Night',
+            dose_slot_morning: 'Morning Dose',
+            dose_slot_noon: 'Noon Dose',
+            dose_slot_evening: 'Evening Dose',
+            dose_slot_night: 'Night Dose',
             dose_slot_custom: 'Dose',
             btn_add_time_slot: '+ Add Custom Time',
             course_summary_prefix: 'Course Plan:',
@@ -510,7 +570,12 @@ window.MediCareI18n = (function () {
             course_total_doses: 'Total Doses:',
             course_completed_status: 'Course Finished',
             toast_dose_taken: 'Dose marked as taken!',
-            toast_dose_undo: 'Dose intake undone'
+            toast_dose_undo: 'Dose intake undone',
+            unit_med: 'Meds',
+            group_all_taken: 'All Doses Taken ({taken}/{total})',
+            group_pending: '{pending} Pending',
+            group_mark_all: 'Take All',
+            toast_group_taken: 'All medications for this time marked as taken!'
         }
     };
 
@@ -641,6 +706,28 @@ window.MediCareI18n = (function () {
         return t('greeting_night');
     }
 
+    function formatMeal(mealStr) {
+        if (!mealStr) return '';
+        const isBn = currentLang === 'bn';
+        const lower = String(mealStr).toLowerCase();
+        if (lower.includes('before') || mealStr.includes('আগে')) {
+            return isBn ? 'খাবারের আগে (Before Meal)' : 'Before Meal';
+        }
+        if (lower.includes('after') || mealStr.includes('পরে')) {
+            return isBn ? 'খাবারের পরে (After Meal)' : 'After Meal';
+        }
+        if (lower.includes('with') || mealStr.includes('সাথে')) {
+            return isBn ? 'খাবারের সাথে (With Meal)' : 'With Meal';
+        }
+        if (lower.includes('empty') || mealStr.includes('খালি পেটে')) {
+            return isBn ? 'খালি পেটে (Empty Stomach)' : 'Empty Stomach';
+        }
+        if (lower.includes('anytime') || mealStr.includes('যেকোনো')) {
+            return isBn ? 'যেকোনো সময় (Anytime)' : 'Anytime';
+        }
+        return mealStr;
+    }
+
     function applyLanguage(lang, notify = false) {
         document.documentElement.lang = lang;
 
@@ -668,6 +755,11 @@ window.MediCareI18n = (function () {
             }
         });
 
+        // Update Document Title
+        document.title = lang === 'bn' 
+            ? 'মেডিকেয়ার | Clinical Medicine & Injection Schedule' 
+            : 'MediCare | Clinical Medicine & Injection Schedule';
+
         // Update Language Switcher Button UI
         const langLabel = document.getElementById('currentLangLabel');
         if (langLabel) {
@@ -680,10 +772,25 @@ window.MediCareI18n = (function () {
             dateEl.textContent = formatDate(new Date());
         }
 
+        // Update notification button label if permission granted
+        const notiLabel = document.getElementById('notiPermLabel');
+        if (notiLabel && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            notiLabel.textContent = t('alert_active');
+        }
+
         // Re-render UI components if present
         if (window.MediCareUI) {
+            if (window.MediCareUI.renderDateStrip) {
+                window.MediCareUI.renderDateStrip();
+            }
+            if (window.MediCareUI.renderPresetChips) {
+                window.MediCareUI.renderPresetChips();
+            }
             window.MediCareUI.renderRoutines();
             window.MediCareUI.renderHistoryView();
+            if (window.MediCareUI.onCourseConfigChanged) {
+                window.MediCareUI.onCourseConfigChanged();
+            }
         }
         if (window.MediCareTools) {
             window.MediCareTools.renderHydrationUI();
@@ -716,6 +823,7 @@ window.MediCareI18n = (function () {
         getDayShortName,
         getMonthShortName,
         formatNumber,
+        formatMeal,
         getTimeOfDayBadge,
         getGreetingText,
         applyLanguage,

@@ -186,22 +186,21 @@ window.MediCareAuth = (function () {
     // Submit handler
     async function handleAuthSubmit(event) {
         event.preventDefault();
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
         const mode = document.getElementById('authCurrentMode')?.value || 'login';
         const username = document.getElementById('authUsername')?.value.trim();
         const password = document.getElementById('authPassword')?.value;
         const fullName = document.getElementById('authFullName')?.value.trim();
 
         if (!username || !password) {
-            showError('অনুগ্রহ করে ইউজারনেম এবং পাসওয়ার্ড পূরণ করুন।');
+            showError(t('auth_err_required', 'অনুগ্রহ করে ইউজারনেম এবং পাসওয়ার্ড পূরণ করুন।'));
             return;
         }
 
         if (mode === 'register' && !fullName) {
-            showError('অনুগ্রহ করে আপনার পুরো নাম দিন।');
+            showError(t('auth_err_fullname', 'অনুগ্রহ করে আপনার পুরো নাম দিন।'));
             return;
         }
-
-        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
 
         // Try Backend API First for Cross-Device Synchronization
         try {
@@ -218,7 +217,7 @@ window.MediCareAuth = (function () {
 
             const data = await res.json();
             if (!res.ok || !data.success) {
-                showError(data.error || 'লগইন ব্যর্থ হয়েছে।');
+                showError(data.error || t('auth_err_failed', 'লগইন ব্যর্থ হয়েছে।'));
                 return;
             }
 
@@ -256,7 +255,7 @@ window.MediCareAuth = (function () {
 
         if (mode === 'register') {
             if (users.some(u => u.username === cleanUsername)) {
-                showError('এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হয়েছে।');
+                showError(t('auth_err_username_exists', 'এই ইউজারনেম ইতিমধ্যে ব্যবহৃত হয়েছে।'));
                 return;
             }
             const newUser = {
@@ -299,7 +298,7 @@ window.MediCareAuth = (function () {
 
             const found = users.find(u => u.username === cleanUsername);
             if (!found || found.passHash !== simpleHash(password)) {
-                showError('ভুল ইউজারনেম বা পাসওয়ার্ড। ডেমো একাউন্ট: demo / 123456');
+                showError(t('auth_err_invalid_creds', 'ভুল ইউজারনেম বা পাসওয়ার্ড। ডেমো একাউন্ট: demo / 123456'));
                 return;
             }
 

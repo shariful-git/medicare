@@ -101,8 +101,12 @@ window.MediCareApp = (function () {
         // Native Notification
         if ("Notification" in window && Notification.permission === "granted") {
             try {
-                new Notification(`ঔষধ সেবনের সময়: ${item.name}`, {
-                    body: `${item.dosage} - ${item.meal} নেওয়ার সময় হয়েছে!`,
+                const isEn = window.MediCareI18n && window.MediCareI18n.getLanguage() === 'en';
+                const notifTitle = isEn ? `Medication Reminder: ${item.name}` : `ঔষধ সেবনের সময়: ${item.name}`;
+                const mealText = window.MediCareI18n ? window.MediCareI18n.formatMeal(item.meal) : item.meal;
+                const notifBody = isEn ? `Time to take ${item.dosage} - ${mealText}!` : `${item.dosage} - ${mealText} নেওয়ার সময় হয়েছে!`;
+                new Notification(notifTitle, {
+                    body: notifBody,
                     icon: 'https://placehold.co/128x128/0d9488/ffffff?text=Medicine'
                 });
             } catch (e) {
@@ -115,12 +119,13 @@ window.MediCareApp = (function () {
         window.MediCareAudio.getAudioContext();
         window.MediCareAudio.playChimeAlert();
 
+        const isEn = window.MediCareI18n && window.MediCareI18n.getLanguage() === 'en';
         const routines = window.MediCareStore.getRoutines();
         const demoItem = routines[0] || {
             id: 'demo-test',
-            name: 'টেস্ট অ্যালার্ম (Demo)',
-            dosage: '১ ডোজ',
-            meal: 'খাবারের পরে',
+            name: isEn ? 'Demo Alert (Test)' : 'টেস্ট অ্যালার্ম (Demo)',
+            dosage: isEn ? '1 Dose' : '১ ডোজ',
+            meal: isEn ? 'After Meal' : 'খাবারের পরে',
             time: '12:00'
         };
         triggerMedAlarm(demoItem);
@@ -320,13 +325,14 @@ window.MediCareApp = (function () {
             importInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                    const isEn = window.MediCareI18n && window.MediCareI18n.getLanguage() === 'en';
                     const success = await window.MediCareSQLite.importDatabaseFile(file);
                     if (success) {
-                        alert('SQLite ডাটাবেজ সফলভাবে রিস্টোর করা হয়েছে!');
+                        alert(isEn ? 'SQLite database restored successfully!' : 'SQLite ডাটাবেজ সফলভাবে রিস্টোর করা হয়েছে!');
                         await window.MediCareStore.init();
                         window.MediCareUI.renderRoutines();
                     } else {
-                        alert('ডাটাবেজ ফাইল ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
+                        alert(isEn ? 'Failed to import database file.' : 'ডাটাবেজ ফাইল ইম্পোর্ট করতে ব্যর্থ হয়েছে।');
                     }
                 }
             });
