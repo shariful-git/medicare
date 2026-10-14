@@ -167,6 +167,15 @@ body {
     animation: box-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+#routineForm .overflow-y-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark #routineForm .overflow-y-auto {
+    scrollbar-color: #334155 transparent;
+}
+
 /* Toast Notification System */
 .toast-container {
     position: fixed;

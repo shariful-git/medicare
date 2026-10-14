@@ -562,175 +562,184 @@
         </button>
     </nav>
 
-    <!-- Routine Add / Edit Modal -->
-    <div id="medicineModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-lg w-full p-5 sm:p-6 shadow-2xl relative transition-all my-8 modal-animate border border-slate-300 dark:border-slate-700">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+    <!-- Routine Add / Edit / Clone Modal (Compact Height with Internal Scroll) -->
+    <div id="medicineModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4" onclick="if(event.target === this) closeModal()">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-lg w-full max-h-[82vh] flex flex-col shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate overflow-hidden" onclick="event.stopPropagation()">
+            <!-- Fixed Modal Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
                 <h3 id="routineModalTitle" class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <i id="routineModalIcon" data-lucide="pill" class="w-5 h-5 text-[#0284c7] dark:text-sky-400"></i>
                     <span id="routineModalTitleText" data-i18n="modal_add_title">নতুন ঔষধ / ইনজেকশন যোগ করুন</span>
                 </h3>
-                <button onclick="closeModal()" aria-label="Close" class="min-h-[40px] min-w-[40px] p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
+                <button type="button" onclick="closeModal()" aria-label="Close" class="min-h-[36px] min-w-[36px] p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition active:scale-95">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <form id="routineForm" onsubmit="handleSaveRoutine(event)" class="space-y-4">
-                <!-- Hidden inputs for edit / clone tracking -->
-                <input type="hidden" id="editingRoutineId" value="">
-                <input type="hidden" id="isCloningRoutine" value="false">
+            <!-- Form Wrapper with internal scrollable body and fixed footer -->
+            <form id="routineForm" onsubmit="handleSaveRoutine(event)" class="flex flex-col flex-1 min-h-0 overflow-hidden m-0">
+                <!-- Scrollable Body Content -->
+                <div class="px-5 pt-4 pb-6 overflow-y-auto flex-1 space-y-4">
+                    <!-- Hidden inputs for edit / clone tracking -->
+                    <input type="hidden" id="editingRoutineId" value="">
+                    <input type="hidden" id="isCloningRoutine" value="false">
 
-                <!-- Clone notice alert banner (shown when cloning) -->
-                <div id="cloneNoticeBanner" class="hidden p-3 rounded-md bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 text-xs flex items-start gap-2.5">
-                    <div class="w-7 h-7 rounded-md bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
-                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    <!-- Clone notice alert banner (shown when cloning) -->
+                    <div id="cloneNoticeBanner" class="hidden p-3 rounded-md bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 text-xs flex items-start gap-2.5">
+                        <div class="w-7 h-7 rounded-md bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-teal-900 dark:text-teal-200" id="cloneBannerTitle" data-i18n="modal_clone_banner_title">ঔষধ শিডিউল ক্লোন মোড</p>
+                            <p class="mt-0.5 text-[11px] text-teal-700 dark:text-teal-400" id="cloneBannerDesc" data-i18n="modal_clone_notice">পূর্ববর্তী তথ্যের ওপর ভিত্তি করে নতুন শিডিউল তৈরি হচ্ছে। আপনি চাইলে সময়, ডোজ বা যেকোনো গুরুত্বপূর্ণ তথ্য পরিবর্তন করে সংরক্ষণ করতে পারেন।</p>
+                        </div>
                     </div>
+
+                    <!-- Name -->
                     <div>
-                        <p class="font-bold text-teal-900 dark:text-teal-200" id="cloneBannerTitle" data-i18n="modal_clone_banner_title">ঔষধ শিডিউল ক্লোন মোড</p>
-                        <p class="mt-0.5 text-[11px] text-teal-700 dark:text-teal-400" id="cloneBannerDesc" data-i18n="modal_clone_notice">পূর্ববর্তী তথ্যের ওপর ভিত্তি করে নতুন শিডিউল তৈরি হচ্ছে। আপনি চাইলে সময়, ডোজ বা যেকোনো গুরুত্বপূর্ণ তথ্য পরিবর্তন করে সংরক্ষণ করতে পারেন।</p>
+                        <label data-i18n="field_name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ঔষধ অথবা ইনজেকশনের নাম *</label>
+                        <input type="text" id="medName" required data-i18n-placeholder="placeholder_name" placeholder="যেমন: Napa Extra, Lantus Insulin, Seclo" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
                     </div>
-                </div>
 
-                <!-- Name -->
-                <div>
-                    <label data-i18n="field_name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ঔষধ অথবা ইনজেকশনের নাম *</label>
-                    <input type="text" id="medName" required data-i18n-placeholder="placeholder_name" placeholder="যেমন: Napa Extra, Lantus Insulin, Seclo" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
-                </div>
-
-                <!-- Type Selector -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <label data-i18n="field_type" class="text-xs font-bold text-slate-700 dark:text-slate-300 col-span-full">ধরন নির্বাচন করুন</label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="tablet" checked class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_tablet">ট্যাবলেট</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="injection" class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💉 <span data-i18n="type_injection">ইনজেকশন</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="capsule" class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_capsule">ক্যাপসুল</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="syrup" class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">🧪 <span data-i18n="type_syrup">সিরাপ</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="drop" class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💧 <span data-i18n="type_drop">ড্রপ</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
-                        <input type="radio" name="medType" value="other" class="accent-[#0284c7]">
-                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">📦 <span data-i18n="type_other">অন্যান্য</span></span>
-                    </label>
-                </div>
-
-                <!-- Dosage & Meal Instruction -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label data-i18n="field_dosage" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ডোজ / পরিমাণ *</label>
-                        <input type="text" id="medDosage" required data-i18n-placeholder="placeholder_dosage" placeholder="১টি / 10 UI / ২ চামচ" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                    <!-- Type Selector -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label data-i18n="field_type" class="text-xs font-bold text-slate-700 dark:text-slate-300 col-span-full">ধরন নির্বাচন করুন</label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="tablet" checked class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_tablet">ট্যাবলেট</span></span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="injection" class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💉 <span data-i18n="type_injection">ইনজেকশন</span></span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="capsule" class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💊 <span data-i18n="type_capsule">ক্যাপসুল</span></span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="syrup" class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">🧪 <span data-i18n="type_syrup">সিরাপ</span></span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="drop" class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">💧 <span data-i18n="type_drop">ড্রপ</span></span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 has-[:checked]:border-[#0284c7] has-[:checked]:bg-sky-50/50 dark:has-[:checked]:bg-sky-950/40">
+                            <input type="radio" name="medType" value="other" class="accent-[#0284c7]">
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">📦 <span data-i18n="type_other">অন্যান্য</span></span>
+                        </label>
                     </div>
-                    <div>
-                        <label data-i18n="field_meal" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">খাবার নির্দেশনা</label>
-                        <select id="medMeal" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
-                            <option value="খাবারের আগে (Before Meal)" data-i18n="meal_before">খাবারের আগে (Before Meal)</option>
-                            <option value="খাবারের পরে (After Meal)" data-i18n="meal_after" selected>খাবারের পরে (After Meal)</option>
-                            <option value="খাবারের সাথে (With Meal)" data-i18n="meal_with">খাবারের সাথে (With Meal)</option>
-                            <option value="খালি পেটে (Empty Stomach)" data-i18n="meal_empty">খালি পেটে (Empty Stomach)</option>
-                            <option value="যেকোনো সময়" data-i18n="meal_anytime">যেকোনো সময় (Anytime)</option>
-                        </select>
-                    </div>
-                </div>
 
-                <!-- Course Start Date & Duration in Days -->
-                <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <!-- Dosage & Meal Instruction -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label data-i18n="field_start_date" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">কোর্স শুরুর তারিখ *</label>
-                            <input type="date" id="medStartDate" required onchange="window.MediCareUI.onCourseConfigChanged()" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                            <label data-i18n="field_dosage" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">ডোজ / পরিমাণ *</label>
+                            <input type="text" id="medDosage" required data-i18n-placeholder="placeholder_dosage" placeholder="১টি / 10 UI / ২ চামচ" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
                         </div>
                         <div>
-                            <label data-i18n="field_duration" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">সেবনের মেয়াদ (দিন) *</label>
-                            <input type="number" id="medDurationDays" min="1" max="365" value="3" required oninput="window.MediCareUI.onCourseConfigChanged()" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                            <label data-i18n="field_meal" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">খাবার নির্দেশনা</label>
+                            <select id="medMeal" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                                <option value="খাবারের আগে (Before Meal)" data-i18n="meal_before">খাবারের আগে (Before Meal)</option>
+                                <option value="খাবারের পরে (After Meal)" data-i18n="meal_after" selected>খাবারের পরে (After Meal)</option>
+                                <option value="খাবারের সাথে (With Meal)" data-i18n="meal_with">খাবারের সাথে (With Meal)</option>
+                                <option value="খালি পেটে (Empty Stomach)" data-i18n="meal_empty">খালি পেটে (Empty Stomach)</option>
+                                <option value="যেকোনো সময়" data-i18n="meal_anytime">যেকোনো সময় (Anytime)</option>
+                            </select>
                         </div>
                     </div>
 
-                    <!-- Preset Duration Quick Chips -->
-                    <div>
-                        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center justify-between">
-                            <span>সহজে মেয়াদের দিন নির্বাচন করুন:</span>
-                            <span id="courseDateRangeSummary" class="text-[#0284c7] dark:text-sky-400 font-bold font-mono">৩ দিন</span>
+                    <!-- Course Start Date & Duration in Days -->
+                    <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label data-i18n="field_start_date" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">কোর্স শুরুর তারিখ *</label>
+                                <input type="date" id="medStartDate" required onchange="window.MediCareUI.onCourseConfigChanged()" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                            </div>
+                            <div>
+                                <label data-i18n="field_duration" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">সেবনের মেয়াদ (দিন) *</label>
+                                <input type="number" id="medDurationDays" min="1" max="365" value="3" required oninput="window.MediCareUI.onCourseConfigChanged()" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                            </div>
                         </div>
-                        <div class="flex items-center gap-1.5 flex-wrap" id="durationPresetContainer">
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(1)" data-days="1" class="choice-pill duration-chip">১ দিন</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(3)" data-days="3" class="choice-pill duration-chip active">৩ দিন</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(5)" data-days="5" class="choice-pill duration-chip">৫ দিন</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(7)" data-days="7" class="choice-pill duration-chip">৭ দিন (১ সপ্তাহ)</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(10)" data-days="10" class="choice-pill duration-chip">১০ দিন</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(14)" data-days="14" class="choice-pill duration-chip">১৪ দিন (২ সপ্তাহ)</button>
-                            <button type="button" onclick="window.MediCareUI.setDurationPreset(30)" data-days="30" class="choice-pill duration-chip">৩০ দিন (১ মাস)</button>
+
+                        <!-- Preset Duration Quick Chips -->
+                        <div>
+                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 flex items-center justify-between">
+                                <span>সহজে মেয়াদের দিন নির্বাচন করুন:</span>
+                                <span id="courseDateRangeSummary" class="text-[#0284c7] dark:text-sky-400 font-bold font-mono">৩ দিন</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-wrap" id="durationPresetContainer">
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(1)" data-days="1" class="choice-pill duration-chip">১ দিন</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(3)" data-days="3" class="choice-pill duration-chip active">৩ দিন</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(5)" data-days="5" class="choice-pill duration-chip">৫ দিন</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(7)" data-days="7" class="choice-pill duration-chip">৭ দিন (১ সপ্তাহ)</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(10)" data-days="10" class="choice-pill duration-chip">১০ দিন</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(14)" data-days="14" class="choice-pill duration-chip">১৪ দিন (২ সপ্তাহ)</button>
+                                <button type="button" onclick="window.MediCareUI.setDurationPreset(30)" data-days="30" class="choice-pill duration-chip">৩০ দিন (১ মাস)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Frequency (Times per Day) -->
+                    <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                        <div>
+                            <label data-i18n="field_frequency" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">প্রতিদিন কতবার সেবন করবেন? *</label>
+                            <div class="flex items-center gap-1.5 flex-wrap" id="frequencyPresetContainer">
+                                <button type="button" onclick="window.MediCareUI.setFrequencyPreset(1)" data-freq="1" class="choice-pill freq-chip">১ বার (দিনে ১ বার)</button>
+                                <button type="button" onclick="window.MediCareUI.setFrequencyPreset(2)" data-freq="2" class="choice-pill freq-chip">২ বার (সকাল ও রাত)</button>
+                                <button type="button" onclick="window.MediCareUI.setFrequencyPreset(3)" data-freq="3" class="choice-pill freq-chip active">৩ বার (সকাল, দুপুর ও রাত)</button>
+                                <button type="button" onclick="window.MediCareUI.setFrequencyPreset(4)" data-freq="4" class="choice-pill freq-chip">৪ বার (৬ ঘণ্টা পর পর)</button>
+                            </div>
+                        </div>
+
+                        <!-- Scheduled Times For Each Dose -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span data-i18n="dose_times_title" class="text-xs font-bold text-slate-700 dark:text-slate-300">প্রতিটি ডোজের নির্ধারিত সময় (HH:MM):</span>
+                                <button type="button" onclick="window.MediCareUI.addCustomTimeSlot()" class="text-[11px] font-bold text-[#0284c7] dark:text-sky-400 hover:underline flex items-center gap-1">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span data-i18n="btn_add_time_slot">+ নতুন সময় যোগ করুন</span>
+                                </button>
+                            </div>
+
+                            <!-- Dynamic Time Slots Container -->
+                            <div id="doseTimesList" class="space-y-2">
+                                <!-- Injected dynamically by js/ui.js -->
+                            </div>
+                        </div>
+
+                        <!-- Live Course Calculation Summary -->
+                        <div id="courseCalculationBanner" class="p-2.5 rounded bg-sky-50 dark:bg-sky-950/50 border border-sky-200/80 dark:border-sky-800/60 text-xs text-sky-900 dark:text-sky-200 flex items-center justify-between flex-wrap gap-2">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="info" class="w-4 h-4 text-[#0284c7] shrink-0"></i>
+                                <span id="courseSummaryText">৩ দিনের কোর্স • প্রতিদিন ৩ বার • সর্বমোট ৯টি ডোজ</span>
+                            </span>
+                            <span id="suggestedStockTag" class="text-[11px] font-bold bg-[#0284c7] text-white px-2 py-0.5 rounded font-mono">
+                                প্রয়োজন: ৯টি
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Stock / Reminder Notes -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3">
+                        <div>
+                            <label data-i18n="field_stock" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">স্টক বা বাকি সংখ্যা (ঐচ্ছিক)</label>
+                            <input type="number" id="medStock" min="0" data-i18n-placeholder="placeholder_stock" placeholder="যেমন: ৩০" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
+                        </div>
+                        <div>
+                            <label data-i18n="field_notes" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">বিশেষ কোনো নোট</label>
+                            <input type="text" id="medNotes" data-i18n-placeholder="placeholder_notes" placeholder="ঠান্ডা জায়গায় রাখুন, ইত্যাদি" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
                         </div>
                     </div>
                 </div>
 
-                <!-- Frequency (Times per Day) -->
-                <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
-                    <div>
-                        <label data-i18n="field_frequency" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">প্রতিদিন কতবার সেবন করবেন? *</label>
-                        <div class="flex items-center gap-1.5 flex-wrap" id="frequencyPresetContainer">
-                            <button type="button" onclick="window.MediCareUI.setFrequencyPreset(1)" data-freq="1" class="choice-pill freq-chip">১ বার (দিনে ১ বার)</button>
-                            <button type="button" onclick="window.MediCareUI.setFrequencyPreset(2)" data-freq="2" class="choice-pill freq-chip">২ বার (সকাল ও রাত)</button>
-                            <button type="button" onclick="window.MediCareUI.setFrequencyPreset(3)" data-freq="3" class="choice-pill freq-chip active">৩ বার (সকাল, দুপুর ও রাত)</button>
-                            <button type="button" onclick="window.MediCareUI.setFrequencyPreset(4)" data-freq="4" class="choice-pill freq-chip">৪ বার (৬ ঘণ্টা পর পর)</button>
-                        </div>
-                    </div>
-
-                    <!-- Scheduled Times For Each Dose -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span data-i18n="dose_times_title" class="text-xs font-bold text-slate-700 dark:text-slate-300">প্রতিটি ডোজের নির্ধারিত সময় (HH:MM):</span>
-                            <button type="button" onclick="window.MediCareUI.addCustomTimeSlot()" class="text-[11px] font-bold text-[#0284c7] dark:text-sky-400 hover:underline flex items-center gap-1">
-                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                                <span data-i18n="btn_add_time_slot">+ নতুন সময় যোগ করুন</span>
-                            </button>
-                        </div>
-
-                        <!-- Dynamic Time Slots Container -->
-                        <div id="doseTimesList" class="space-y-2">
-                            <!-- Injected dynamically by js/ui.js -->
-                        </div>
-                    </div>
-
-                    <!-- Live Course Calculation Summary -->
-                    <div id="courseCalculationBanner" class="p-2.5 rounded bg-sky-50 dark:bg-sky-950/50 border border-sky-200/80 dark:border-sky-800/60 text-xs text-sky-900 dark:text-sky-200 flex items-center justify-between flex-wrap gap-2">
-                        <span class="flex items-center gap-1.5">
-                            <i data-lucide="info" class="w-4 h-4 text-[#0284c7] shrink-0"></i>
-                            <span id="courseSummaryText">৩ দিনের কোর্স • প্রতিদিন ৩ বার • সর্বমোট ৯টি ডোজ</span>
-                        </span>
-                        <span id="suggestedStockTag" class="text-[11px] font-bold bg-[#0284c7] text-white px-2 py-0.5 rounded font-mono">
-                            প্রয়োজন: ৯টি
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Stock / Reminder Notes -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label data-i18n="field_stock" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">স্টক বা বাকি সংখ্যা (ঐচ্ছিক)</label>
-                        <input type="number" id="medStock" min="0" data-i18n-placeholder="placeholder_stock" placeholder="যেমন: ৩০" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
-                    </div>
-                    <div>
-                        <label data-i18n="field_notes" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">বিশেষ কোনো নোট</label>
-                        <input type="text" id="medNotes" data-i18n-placeholder="placeholder_notes" placeholder="ঠান্ডা জায়গায় রাখুন, ইত্যাদি" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:border-[#0284c7] focus:ring-1 focus:ring-[#0284c7] transition">
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <button type="button" onclick="closeModal()" class="min-h-[44px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><span data-i18n="btn_cancel">বাতিল</span></button>
-                    <button type="submit" class="min-h-[44px] px-5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs transition active:scale-95"><span id="routineModalSubmitText" data-i18n="btn_save">সংরক্ষণ করুন</span></button>
+                <!-- Fixed Modal Footer -->
+                <div class="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 shrink-0">
+                    <button type="button" onclick="closeModal()" class="min-h-[40px] px-4 py-2 rounded-md border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition active:scale-95">
+                        <span data-i18n="btn_cancel">বাতিল</span>
+                    </button>
+                    <button type="submit" class="min-h-[40px] px-5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs transition active:scale-95">
+                        <span id="routineModalSubmitText" data-i18n="btn_save">সংরক্ষণ করুন</span>
+                    </button>
                 </div>
             </form>
         </div>
