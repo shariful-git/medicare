@@ -1,6 +1,6 @@
 /**
  * MediCare - Authentication & User Profile Manager
- * Supports both Node.js Backend Server API and Client-Side SQLite Multi-User Storage.
+ * Supports Central Node.js SQLite Backend Server & Multi-Device Sync.
  */
 
 window.MediCareAuth = (function () {
@@ -10,7 +10,7 @@ window.MediCareAuth = (function () {
         : 'http://localhost:3000';
 
     let currentUser = null;
-    let isServerMode = false;
+    let isServerMode = true; // Assume server is primary
 
     // Check if Backend API is alive
     async function checkServerHealth() {
@@ -21,11 +21,17 @@ window.MediCareAuth = (function () {
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.user) {
-                    currentUser = data.user;
+                    const session = getSavedSession() || {};
+                    currentUser = { ...data.user, token: session.token };
                     saveSessionLocally(currentUser);
                     isServerMode = true;
                     return true;
                 }
+            }
+            // Even if unauthenticated, if /api/auth/me returned 401, server is alive!
+            if (res.status === 401) {
+                isServerMode = true;
+                return true;
             }
             isServerMode = true;
             return false;
@@ -33,6 +39,14 @@ window.MediCareAuth = (function () {
             isServerMode = false;
             return false;
         }
+    }
+
+    function getApiBase() {
+        return API_BASE;
+    }
+
+    function isServerActive() {
+        return isServerMode;
     }
 
     function getAuthHeaders() {
@@ -176,7 +190,6 @@ window.MediCareAuth = (function () {
         const username = document.getElementById('authUsername')?.value.trim();
         const password = document.getElementById('authPassword')?.value;
         const fullName = document.getElementById('authFullName')?.value.trim();
-        const errEl = document.getElementById('authErrorMessage');
 
         if (!username || !password) {
             showError('অনুগ্রহ করে ইউজারনেম এবং পাসওয়ার্ড পূরণ করুন।');
@@ -190,41 +203,40 @@ window.MediCareAuth = (function () {
 
         const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
 
-        // Try Backend API First
-        if (isServerMode) {
-            try {
-                const endpoint = mode === 'register' ? `${API_BASE}/api/auth/register` : `${API_BASE}/api/auth/login`;
-                const body = mode === 'register' 
-                    ? { username, full_name: fullName, password }
-                    : { username, password };
+        // Try Backend API First for Cross-Device Synchronization
+        try {
+            const endpoint = mode === 'register' ? `${API_BASE}/api/auth/register` : `${API_BASE}/api/auth/login`;
+            const body = mode === 'register' 
+                ? { username, full_name: fullName, password }
+                : { username, password };
 
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
 
-                const data = await res.json();
-                if (!res.ok || !data.success) {
-                    showError(data.error || 'লগইন ব্যর্থ হয়েছে।');
-                    return;
-                }
-
-                saveSessionLocally({
-                    id: data.user.id,
-                    username: data.user.username,
-                    full_name: data.user.full_name,
-                    token: data.token
-                });
-
-                closeAuthModal();
-                updateAuthUI();
-                showSuccessToast(mode === 'register' ? t('toast_register_success', 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!') : t('toast_login_success', 'স্বাগতম! আপনি সফলভাবে লগইন করেছেন।'));
-                reloadUserData();
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                showError(data.error || 'লগইন ব্যর্থ হয়েছে।');
                 return;
-            } catch (err) {
-                console.warn('Backend call failed, using client-side SQLite mode:', err);
             }
+
+            saveSessionLocally({
+                id: data.user.id,
+                username: data.user.username,
+                full_name: data.user.full_name,
+                token: data.token
+            });
+
+            isServerMode = true;
+            closeAuthModal();
+            updateAuthUI();
+            showSuccessToast(mode === 'register' ? t('toast_register_success', 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!') : t('toast_login_success', 'স্বাগতম! আপনি সফলভাবে লগইন করেছেন।'));
+            reloadUserData();
+            return;
+        } catch (err) {
+            console.warn('Backend call failed, using client-side fallback:', err);
         }
 
         // Client-Side SQLite Multi-User Fallback
@@ -270,10 +282,9 @@ window.MediCareAuth = (function () {
             reloadUserData();
         } else {
             // Login
-            // Default demo credentials
             if (cleanUsername === 'demo' && password === '123456') {
                 const demoUser = {
-                    id: 'usr_demo_01',
+                    id: 'user_demo_01',
                     username: 'demo',
                     full_name: 'ডা. শরিফুল ইসলাম (Dr. Shariful)',
                     token: 'demo_' + Date.now()
@@ -306,10 +317,37 @@ window.MediCareAuth = (function () {
         }
     }
 
-    // Quick 1-Click Demo Login
-    function quickDemoLogin() {
+    // Quick 1-Click Demo Login with central server synchronization
+    async function quickDemoLogin() {
+        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
+        try {
+            const res = await fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'demo', password: '123456' })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                saveSessionLocally({
+                    id: data.user.id,
+                    username: data.user.username,
+                    full_name: data.user.full_name,
+                    token: data.token
+                });
+                isServerMode = true;
+                closeAuthModal();
+                updateAuthUI();
+                showSuccessToast(t('toast_demo_login', 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!'));
+                reloadUserData();
+                return;
+            }
+        } catch (e) {
+            console.warn('Server offline during demo login, using client fallback:', e);
+        }
+
+        // Fallback
         const demoUser = {
-            id: 'usr_demo_01',
+            id: 'user_demo_01',
             username: 'demo',
             full_name: 'ডা. শরিফুল ইসলাম (Dr. Shariful)',
             token: 'demo_token_' + Date.now()
@@ -317,7 +355,6 @@ window.MediCareAuth = (function () {
         saveSessionLocally(demoUser);
         closeAuthModal();
         updateAuthUI();
-        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
         showSuccessToast(t('toast_demo_login', 'ডেমো অ্যাকাউন্টে সফলভাবে প্রবেশ করেছেন!'));
         reloadUserData();
     }
@@ -360,17 +397,6 @@ window.MediCareAuth = (function () {
         }
     }
 
-    // 1-Click direct SQLite file download
-    function downloadSqliteFile() {
-        if (isServerMode) {
-            window.location.href = `${API_BASE}/api/database/download`;
-        } else if (window.MediCareSQLite && typeof window.MediCareSQLite.exportDatabaseFile === 'function') {
-            window.MediCareSQLite.exportDatabaseFile();
-            const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
-            showSuccessToast(t('toast_db_downloaded', 'medicare.sqlite ফাইল সফলভাবে ডাউনলোড হয়েছে!'));
-        }
-    }
-
     // UI Updater
     function updateAuthUI() {
         const authBtn = document.getElementById('userAuthBtn');
@@ -379,7 +405,6 @@ window.MediCareAuth = (function () {
         const userDisplayName = document.getElementById('userDisplayName');
         const dropdownUserName = document.getElementById('dropdownUserName');
         const dropdownUserHandle = document.getElementById('dropdownUserHandle');
-        const dbStatusBadge = document.getElementById('dbStatusBadge');
 
         if (currentUser) {
             if (authBtn) authBtn.classList.add('hidden');
@@ -395,15 +420,6 @@ window.MediCareAuth = (function () {
             if (profileBox) profileBox.classList.add('hidden');
         }
 
-        // Database status indicator
-        if (dbStatusBadge) {
-            if (isServerMode) {
-                dbStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold font-mono">SQLite Server Active</span>`;
-            } else {
-                dbStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-500"></span> <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold font-mono">.SQLite DB Ready</span>`;
-            }
-        }
-
         if (window.lucide) window.lucide.createIcons();
     }
 
@@ -411,6 +427,9 @@ window.MediCareAuth = (function () {
         init,
         isLoggedIn,
         getCurrentUser,
+        getApiBase,
+        isServerActive,
+        getAuthHeaders,
         openAuthModal,
         closeAuthModal,
         switchAuthTab,
@@ -419,7 +438,6 @@ window.MediCareAuth = (function () {
         quickDemoLogin,
         logout,
         toggleUserMenu,
-        downloadSqliteFile,
         updateAuthUI
     };
 })();

@@ -84,12 +84,6 @@
                             <span class="status-indicator"></span>
                             <span data-i18n="active_status">সক্রিয়</span>
                         </span>
-                        <span class="hidden lg:inline-block text-slate-300 dark:text-slate-700">•</span>
-                        <!-- SQLite DB status indicator -->
-                        <span id="dbStatusBadge" class="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/70 border border-sky-200 dark:border-sky-800 text-[11px] font-semibold">
-                            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
-                            <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold font-mono">.SQLite DB</span>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -145,14 +139,6 @@
                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono" id="dropdownUserHandle">@user</p>
                             </div>
                             <div class="py-1">
-                                <button onclick="window.MediCareAuth.downloadSqliteFile()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 transition">
-                                    <i data-lucide="database" class="w-4 h-4 text-sky-500"></i>
-                                    <span data-i18n="btn_download_db">.sqlite ফাইল ডাউনলোড</span>
-                                </button>
-                                <button onclick="window.MediCareStore.resetToFreshDatabase()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2 transition">
-                                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                                    <span data-i18n="btn_fresh_db">ডাটাবেজ ফ্রেশ / রিসেট</span>
-                                </button>
                                 <button onclick="window.MediCareAuth.logout()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition">
                                     <i data-lucide="log-out" class="w-4 h-4"></i>
                                     <span data-i18n="btn_logout">লগআউট</span>
@@ -404,35 +390,40 @@
                 </div>
             </div>
 
-            <!-- Tool C: SQLite Database Management & Fresh Reset -->
+            <!-- Tool C: Clinical Medication Guidelines & Health Safety Tips -->
             <div class="p-5 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 shadow-xs space-y-4 sm:col-span-2">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-10 h-10 rounded-md bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
-                            <i data-lucide="database" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <h3 data-i18n="db_management_title" class="font-bold text-sm text-slate-900 dark:text-white">ডাটাবেজ ও ব্যাকআপ নিয়ন্ত্রণ (.SQLite)</h3>
-                            <p data-i18n="db_management_desc" class="text-[11px] text-slate-400">লোকাল SQLite ডাটাবেজ ব্যাকআপ, এক্সপোর্ট ও সম্পূর্ণ ফ্রেশ রিসেট সুবিধা।</p>
-                        </div>
+                <div class="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="w-10 h-10 rounded-md bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800 flex items-center justify-center shrink-0">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 font-mono">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            SQLite Local DB
-                        </span>
+                    <div>
+                        <h3 data-i18n="safety_guide_title" class="font-bold text-sm text-slate-900 dark:text-white">ক্লিনিক্যাল স্বাস্থ্য ও ঔষধ সেবনের সাধারণ নির্দেশিকা</h3>
+                        <p data-i18n="safety_guide_desc" class="text-[11px] text-slate-400">ঔষধের সর্বোচ্চ কার্যকারিতা ও স্বাস্থ্য সুরক্ষার গুরুত্বপূর্ণ নিয়মাবলী।</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <button onclick="window.MediCareAuth.downloadSqliteFile()" class="min-h-[44px] py-2.5 px-4 rounded-md border border-slate-300 dark:border-slate-700 hover:border-[#0284c7] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-slate-800 dark:text-slate-200 font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 active:scale-95">
-                        <i data-lucide="download" class="w-4 h-4 text-[#0284c7]"></i>
-                        <span data-i18n="btn_download_db">.sqlite ফাইল ডাউনলোড</span>
-                    </button>
-                    <button onclick="window.MediCareStore.resetToFreshDatabase()" class="min-h-[44px] py-2.5 px-4 rounded-md border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-bold text-xs transition shadow-xs flex items-center justify-center gap-2 active:scale-95">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-600"></i>
-                        <span data-i18n="btn_fresh_db_action">সম্পূর্ণ ফ্রেশ ও রিসেট করুন</span>
-                    </button>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div class="p-3.5 rounded-md bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1.5 text-[#0284c7] dark:text-sky-400 font-bold text-xs">
+                            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                            <span data-i18n="guide_rule1_title">নির্দিষ্ট সময় মেনে চলা</span>
+                        </div>
+                        <p data-i18n="guide_rule1_desc" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">প্রতিদিন একই সময়ে ঔষধ সেবন করুন। অ্যান্টিবায়োটিকের নির্ধারিত সম্পূর্ণ কোর্স সম্পন্ন করা অত্যন্ত জরুরি।</p>
+                    </div>
+                    <div class="p-3.5 rounded-md bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                            <i data-lucide="droplet" class="w-3.5 h-3.5"></i>
+                            <span data-i18n="guide_rule2_title">পর্যাপ্ত পানি পান</span>
+                        </div>
+                        <p data-i18n="guide_rule2_desc" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">ট্যাবলেট বা ক্যাপসুল পুরো এক গ্লাস পানির সাথে গ্রহণ করুন। ঔষধ খাওয়ার পর পর্যাপ্ত পানি শরীরকে সতেজ রাখে।</p>
+                    </div>
+                    <div class="p-3.5 rounded-md bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                            <span data-i18n="guide_rule3_title">চিকিৎসকের পরামর্শ</span>
+                        </div>
+                        <p data-i18n="guide_rule3_desc" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">ডাক্তারের পরামর্শ ব্যতীত কোনো ঔষধের মাত্রা বাড়াবেন বা হঠাৎ বন্ধ করবেন না। শুষ্ক ও শীতল স্থানে ঔষধ সংরক্ষণ করুন।</p>
+                    </div>
                 </div>
             </div>
         </div>

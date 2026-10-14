@@ -1,6 +1,7 @@
 /**
  * MediCare - Unified Storage & State Manager
- * Coordinates LocalStorage and SQLite WebAssembly Database with Strict Multi-User Isolation.
+ * Coordinates Central Server Synchronization, LocalStorage, and SQLite WebAssembly Database.
+ * Enables seamless cross-device login and data retrieval for any user account.
  */
 
 window.MediCareStore = (function () {
@@ -59,7 +60,7 @@ window.MediCareStore = (function () {
     }
 
     /**
-     * Resolves the active user ID (defaults to 'guest')
+     * Resolves active user ID (defaults to 'guest')
      */
     function getActiveUserId() {
         if (window.MediCareAuth && typeof window.MediCareAuth.getCurrentUser === 'function') {
@@ -70,48 +71,99 @@ window.MediCareStore = (function () {
     }
 
     /**
-     * Returns user-isolated storage key
+     * User-isolated storage key
      */
     function getUserKey(baseKey, userId) {
         const uid = userId || getActiveUserId();
         return `${baseKey}_${uid}`;
     }
 
-    /**
-     * Filters out old legacy sample mock IDs so user always gets clean data
-     */
     function filterOutMockData(list) {
         if (!Array.isArray(list)) return [];
         return list.filter(r => !['demo-1', 'demo-2', 'demo-3', 'med-demo-1', 'med-demo-2', 'med-demo-3'].includes(r.id));
     }
 
     /**
+     * Normalizes a raw routine object
+     */
+    function normalizeRoutine(r) {
+        const startDate = r.startDate || (r.createdAt ? r.createdAt.slice(0, 10) : getTodayDateStr());
+        const durationDays = parseInt(r.durationDays, 10) || 3;
+        const endDate = r.endDate || calculateEndDate(startDate, durationDays);
+        
+        let times = Array.isArray(r.times) && r.times.length > 0 ? r.times : (r.time ? [r.time] : ['08:00']);
+        const frequency = parseInt(r.frequency, 10) || times.length;
+        
+        let takenHistory = r.takenHistory && typeof r.takenHistory === 'object' ? r.takenHistory : {};
+        if (typeof takenHistory === 'string') {
+            try { takenHistory = JSON.parse(takenHistory); } catch (e) { takenHistory = {}; }
+        }
+
+        if (r.takenToday && r.lastTakenDate) {
+            const todayKey = getTodayDateStr();
+            if (!takenHistory[todayKey]) {
+                takenHistory[todayKey] = [...times];
+            }
+        }
+
+        return {
+            ...r,
+            startDate,
+            durationDays,
+            endDate,
+            frequency,
+            times,
+            time: r.time || times[0],
+            takenHistory
+        };
+    }
+
+    /**
      * Initializes Storage and loads active user's data
      */
     async function init() {
-        // 1. Initialize SQLite WebAssembly
+        // Initialize SQLite WebAssembly if available locally
         if (window.MediCareSQLite) {
             await window.MediCareSQLite.init();
         }
 
-        // 2. Load routines strictly for the active user
+        // Load routines strictly for active user
         await loadUserRoutines();
+
+        // Also fetch hydration from server if logged in
+        syncHydrationFromServer();
     }
 
     /**
      * Loads routines specifically for current active user
+     * Priority: Central Node.js SQLite Server API -> LocalStorage Cache -> SQLite WebAssembly
      */
     async function loadUserRoutines() {
         const uid = getActiveUserId();
         let loaded = null;
+        let fromServer = false;
 
-        // Try SQLite first
-        if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
-            loaded = window.MediCareSQLite.loadRoutines(uid);
+        // 1. If user is logged in, fetch from central server first
+        if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+            try {
+                const apiBase = window.MediCareAuth.getApiBase();
+                const res = await fetch(`${apiBase}/api/routines`, {
+                    headers: window.MediCareAuth.getAuthHeaders()
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.routines)) {
+                        loaded = data.routines;
+                        fromServer = true;
+                    }
+                }
+            } catch (err) {
+                console.warn('Could not sync routines with server, falling back to local cache:', err);
+            }
         }
 
-        // Fallback to user-scoped LocalStorage
-        if (!loaded || loaded.length === 0) {
+        // 2. Fallback to LocalStorage cache if server returned nothing or offline
+        if (!loaded) {
             const userStoreKey = getUserKey(BASE_STORAGE_KEY, uid);
             const stored = localStorage.getItem(userStoreKey);
             if (stored) {
@@ -120,53 +172,26 @@ window.MediCareStore = (function () {
                 } catch (e) {
                     loaded = [];
                 }
-            } else {
-                if (uid === 'guest') {
-                    const legacyGlobal = localStorage.getItem(BASE_STORAGE_KEY);
-                    if (legacyGlobal) {
-                        try {
-                            loaded = JSON.parse(legacyGlobal);
-                        } catch (e) {
-                            loaded = [];
-                        }
-                    }
-                }
+            }
+        }
+
+        // 3. Fallback to SQLite WebAssembly
+        if (!loaded || loaded.length === 0) {
+            if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
+                loaded = window.MediCareSQLite.loadRoutines(uid);
             }
         }
 
         const rawList = filterOutMockData(loaded || []);
-
-        // Normalize each routine with course duration, frequency, times, and history
-        routines = rawList.map(r => {
-            const startDate = r.startDate || (r.createdAt ? r.createdAt.slice(0, 10) : getTodayDateStr());
-            const durationDays = parseInt(r.durationDays, 10) || 3;
-            const endDate = r.endDate || calculateEndDate(startDate, durationDays);
-            
-            let times = Array.isArray(r.times) && r.times.length > 0 ? r.times : (r.time ? [r.time] : ['08:00']);
-            const frequency = parseInt(r.frequency, 10) || times.length;
-            
-            let takenHistory = r.takenHistory && typeof r.takenHistory === 'object' ? r.takenHistory : {};
-            if (r.takenToday && r.lastTakenDate) {
-                const todayKey = getTodayDateStr();
-                if (!takenHistory[todayKey]) {
-                    takenHistory[todayKey] = [...times];
-                }
-            }
-
-            return {
-                ...r,
-                startDate,
-                durationDays,
-                endDate,
-                frequency,
-                times,
-                time: r.time || times[0],
-                takenHistory
-            };
-        });
+        routines = rawList.map(normalizeRoutine);
 
         refreshRoutineStatuses();
-        save();
+        
+        // Cache to local storage
+        localStorage.setItem(getUserKey(BASE_STORAGE_KEY, uid), JSON.stringify(routines));
+        if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
+            window.MediCareSQLite.syncRoutines(routines, uid);
+        }
     }
 
     /**
@@ -177,6 +202,7 @@ window.MediCareStore = (function () {
         searchQuery = '';
         selectedDate = getTodayDateStr();
         await loadUserRoutines();
+        await syncHydrationFromServer();
 
         if (window.MediCareUI) {
             window.MediCareUI.renderDateStrip();
@@ -189,14 +215,12 @@ window.MediCareStore = (function () {
     }
 
     /**
-     * Saves active user's routines to both SQLite and localStorage
+     * Saves active user's routines to LocalStorage and local SQLite
      */
     function save() {
         const uid = getActiveUserId();
-        // Save to user-scoped localStorage
         localStorage.setItem(getUserKey(BASE_STORAGE_KEY, uid), JSON.stringify(routines));
 
-        // Save to SQLite
         if (window.MediCareSQLite && window.MediCareSQLite.isReady()) {
             window.MediCareSQLite.syncRoutines(routines, uid);
         }
@@ -230,7 +254,7 @@ window.MediCareStore = (function () {
     }
 
     /**
-     * Returns scheduled doses for a specific date (or selectedDate)
+     * Returns scheduled doses for a specific date
      */
     function getDosesForDate(targetDate = selectedDate) {
         const doses = [];
@@ -264,18 +288,14 @@ window.MediCareStore = (function () {
             }
         });
 
-        // Sort doses chronologically by time
+        // Sort doses chronologically
         doses.sort((a, b) => a.time.localeCompare(b.time));
         return doses;
     }
 
-    /**
-     * Returns doses for target date with active search & filter applied
-     */
     function getFilteredDosesForDate(targetDate = selectedDate) {
         const doses = getDosesForDate(targetDate);
         return doses.filter(d => {
-            // Filter match
             let matchesFilter = true;
             if (activeFilter === 'pending') {
                 matchesFilter = !d.isTaken;
@@ -283,7 +303,6 @@ window.MediCareStore = (function () {
                 matchesFilter = d.isTaken;
             }
 
-            // Search query match
             let matchesSearch = true;
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
@@ -298,9 +317,6 @@ window.MediCareStore = (function () {
         });
     }
 
-    /**
-     * Returns stats for the target date (or selectedDate)
-     */
     function getStatsForDate(targetDate = selectedDate) {
         const doses = getDosesForDate(targetDate);
         const total = doses.length;
@@ -310,9 +326,6 @@ window.MediCareStore = (function () {
         return { total, taken, pending, percentage };
     }
 
-    /**
-     * Returns scheduled status for date strip dots
-     */
     function getDateBadgeStatus(dateStr) {
         const doses = getDosesForDate(dateStr);
         const total = doses.length;
@@ -350,6 +363,9 @@ window.MediCareStore = (function () {
         currentTab = tab;
     }
 
+    /**
+     * Add Routine & Sync with Central Server
+     */
     function addRoutine(routine, isCloned = false) {
         const uid = getActiveUserId();
         routine.user_id = uid;
@@ -364,8 +380,19 @@ window.MediCareStore = (function () {
 
         routines.unshift(routine);
         save();
+
         if (window.MediCareSQLite) {
             window.MediCareSQLite.logAction(routine.id, routine.name, isCloned ? 'action_cloned' : 'action_added', null, routine.startDate, uid);
+        }
+
+        // Sync with Central Server
+        if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+            const apiBase = window.MediCareAuth.getApiBase();
+            fetch(`${apiBase}/api/routines`, {
+                method: 'POST',
+                headers: window.MediCareAuth.getAuthHeaders(),
+                body: JSON.stringify({ ...routine, isCloned })
+            }).catch(err => console.warn('Server sync failed on addRoutine:', err));
         }
     }
 
@@ -373,6 +400,9 @@ window.MediCareStore = (function () {
         return routines.find(r => r.id === id) || null;
     }
 
+    /**
+     * Update Routine & Sync with Central Server
+     */
     function updateRoutine(id, updatedData) {
         const index = routines.findIndex(r => r.id === id);
         if (index !== -1) {
@@ -392,16 +422,28 @@ window.MediCareStore = (function () {
                 frequency: times.length
             };
             save();
+
             if (window.MediCareSQLite) {
                 window.MediCareSQLite.logAction(id, routines[index].name, 'action_updated', null, null, getActiveUserId());
             }
+
+            // Sync with Central Server
+            if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+                const apiBase = window.MediCareAuth.getApiBase();
+                fetch(`${apiBase}/api/routines/${id}`, {
+                    method: 'PUT',
+                    headers: window.MediCareAuth.getAuthHeaders(),
+                    body: JSON.stringify(routines[index])
+                }).catch(err => console.warn('Server sync failed on updateRoutine:', err));
+            }
+
             return routines[index];
         }
         return null;
     }
 
     /**
-     * Mark a specific dose on a specific date as taken
+     * Mark a specific dose on a specific date as taken & Sync with Server
      */
     function markDoseTaken(routineId, dateStr, timeStr) {
         const item = routines.find(r => r.id === routineId);
@@ -421,16 +463,28 @@ window.MediCareStore = (function () {
                 item.lastTakenDate = new Date().toDateString();
             }
             save();
+
             if (window.MediCareSQLite) {
                 window.MediCareSQLite.logAction(item.id, `${item.name} (${timeStr})`, 'action_taken', null, dateStr, getActiveUserId());
             }
+
+            // Sync with Central Server
+            if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+                const apiBase = window.MediCareAuth.getApiBase();
+                fetch(`${apiBase}/api/routines/${routineId}/dose-taken`, {
+                    method: 'POST',
+                    headers: window.MediCareAuth.getAuthHeaders(),
+                    body: JSON.stringify({ dateStr, timeStr })
+                }).catch(err => console.warn('Server sync failed on markDoseTaken:', err));
+            }
+
             return item;
         }
         return null;
     }
 
     /**
-     * Undo a taken dose on a specific date
+     * Undo a taken dose on a specific date & Sync with Server
      */
     function markDoseUndo(routineId, dateStr, timeStr) {
         const item = routines.find(r => r.id === routineId);
@@ -449,9 +503,21 @@ window.MediCareStore = (function () {
                 item.takenToday = count >= (item.times ? item.times.length : 1);
             }
             save();
+
             if (window.MediCareSQLite) {
                 window.MediCareSQLite.logAction(item.id, `${item.name} (${timeStr})`, 'action_undo', null, dateStr, getActiveUserId());
             }
+
+            // Sync with Central Server
+            if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+                const apiBase = window.MediCareAuth.getApiBase();
+                fetch(`${apiBase}/api/routines/${routineId}/dose-undo`, {
+                    method: 'POST',
+                    headers: window.MediCareAuth.getAuthHeaders(),
+                    body: JSON.stringify({ dateStr, timeStr })
+                }).catch(err => console.warn('Server sync failed on markDoseUndo:', err));
+            }
+
             return item;
         }
         return null;
@@ -475,13 +541,26 @@ window.MediCareStore = (function () {
         return null;
     }
 
+    /**
+     * Delete Routine & Sync with Central Server
+     */
     function deleteRoutine(id) {
         const item = routines.find(r => r.id === id);
         const name = item ? item.name : 'ঔষধ';
         routines = routines.filter(r => r.id !== id);
         save();
+
         if (window.MediCareSQLite) {
             window.MediCareSQLite.logAction(id, name, 'action_deleted', null, null, getActiveUserId());
+        }
+
+        // Sync with Central Server
+        if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+            const apiBase = window.MediCareAuth.getApiBase();
+            fetch(`${apiBase}/api/routines/${id}`, {
+                method: 'DELETE',
+                headers: window.MediCareAuth.getAuthHeaders()
+            }).catch(err => console.warn('Server sync failed on deleteRoutine:', err));
         }
     }
 
@@ -489,11 +568,28 @@ window.MediCareStore = (function () {
         return getStatsForDate(selectedDate);
     }
 
+    // Hydration Tracker state with cross-device sync
+    async function syncHydrationFromServer() {
+        if (!window.MediCareAuth || !window.MediCareAuth.isLoggedIn()) return;
+        try {
+            const apiBase = window.MediCareAuth.getApiBase();
+            const res = await fetch(`${apiBase}/api/hydration`, {
+                headers: window.MediCareAuth.getAuthHeaders()
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (json.success && json.hydration) {
+                    const uid = getActiveUserId();
+                    localStorage.setItem(getUserKey(BASE_HYDRATION_KEY, uid), JSON.stringify(json.hydration));
+                    if (window.MediCareTools) window.MediCareTools.renderHydrationUI();
+                }
+            }
+        } catch (e) {}
+    }
 
-    // Hydration Tracker state isolated per user
     function getHydration() {
         const uid = getActiveUserId();
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = getTodayDateStr();
         const raw = localStorage.getItem(getUserKey(BASE_HYDRATION_KEY, uid));
         let data = {};
         if (raw) {
@@ -514,6 +610,21 @@ window.MediCareStore = (function () {
         if (newGlasses > 20) newGlasses = 20;
         fullData[todayKey].glasses = newGlasses;
         localStorage.setItem(getUserKey(BASE_HYDRATION_KEY, uid), JSON.stringify(fullData));
+
+        // Push to server
+        if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+            const apiBase = window.MediCareAuth.getApiBase();
+            fetch(`${apiBase}/api/hydration`, {
+                method: 'POST',
+                headers: window.MediCareAuth.getAuthHeaders(),
+                body: JSON.stringify({
+                    dateStr: todayKey,
+                    glasses: newGlasses,
+                    target: fullData[todayKey].target || 8
+                })
+            }).catch(e => console.warn('Hydration server sync error:', e));
+        }
+
         return fullData[todayKey];
     }
 
@@ -528,54 +639,13 @@ window.MediCareStore = (function () {
         if (window.MediCareSQLite) {
             window.MediCareSQLite.clearHistoryLogs(getActiveUserId());
         }
-    }
-
-    /**
-     * Resets database completely to a fresh, clean slate
-     */
-    function resetToFreshDatabase(skipConfirm = false) {
-        const t = (k, def) => window.MediCareI18n ? window.MediCareI18n.t(k, def) : def;
-        if (!skipConfirm) {
-            const confirmed = window.confirm(t('confirm_fresh_db', 'আপনি কি নিশ্চিত যে ডাটাবেজ সম্পূর্ণ ফ্রেশ ও রিসেট করতে চান? আপনার বর্তমান সমস্ত ঔষধ শিডিউল এবং হিস্ট্রি লগ মুছে যাবে।'));
-            if (!confirmed) return false;
+        if (window.MediCareAuth && window.MediCareAuth.isLoggedIn()) {
+            const apiBase = window.MediCareAuth.getApiBase();
+            fetch(`${apiBase}/api/history`, {
+                method: 'DELETE',
+                headers: window.MediCareAuth.getAuthHeaders()
+            }).catch(e => {});
         }
-
-        // 1. Reset SQLite
-        if (window.MediCareSQLite) {
-            window.MediCareSQLite.resetDatabase();
-        }
-
-        // 2. Wipe LocalStorage entries related to routines and history
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (
-                key.startsWith('medicare_routines') ||
-                key.startsWith('medicare_history_logs') ||
-                key.startsWith('medicare_hydration') ||
-                key === 'medicare_sqlite_bin_v1'
-            )) {
-                keysToRemove.push(key);
-            }
-        }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
-
-        // 3. Clear in-memory routines
-        routines = [];
-        activeFilter = 'all';
-        searchQuery = '';
-
-        // 4. Update UI
-        if (window.MediCareUI) {
-            window.MediCareUI.renderRoutines();
-            window.MediCareUI.renderHistoryView();
-            window.MediCareUI.showToast(t('toast_fresh_db_success', 'ডাটাবেজ সফলভাবে ফ্রেশ ও পরিষ্কার করা হয়েছে!'), 'success');
-        }
-        if (window.MediCareTools) {
-            window.MediCareTools.renderHydrationUI();
-        }
-
-        return true;
     }
 
     return {
@@ -609,10 +679,10 @@ window.MediCareStore = (function () {
         getStats,
         getHydration,
         updateHydration,
+        syncHydrationFromServer,
         getHistoryLogsPaged,
         clearHistoryLogs,
         refreshRoutineStatuses,
-        save,
-        resetToFreshDatabase
+        save
     };
 })();
