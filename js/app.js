@@ -4,6 +4,7 @@
 
 window.MediCareApp = (function () {
     let activeAlarmRoutine = null;
+    let lastCheckedDateStr = '';
 
     async function init() {
         // Localization init (Bangladesh -> 'bn', other countries -> 'en')
@@ -52,6 +53,25 @@ window.MediCareApp = (function () {
 
     function updateClockAndDates() {
         const now = new Date();
+        const currentDateStr = window.MediCareStore ? window.MediCareStore.getTodayDateStr() : '';
+
+        // Detect midnight rollover / date change while app is running
+        if (lastCheckedDateStr && currentDateStr && lastCheckedDateStr !== currentDateStr) {
+            const prevSelectedDate = window.MediCareStore.getSelectedDate();
+            if (prevSelectedDate === lastCheckedDateStr) {
+                window.MediCareStore.setSelectedDate(currentDateStr);
+            }
+            window.MediCareStore.refreshRoutineStatuses();
+            if (window.MediCareUI && window.MediCareUI.renderDateStrip) {
+                window.MediCareUI.renderDateStrip();
+            }
+            if (window.MediCareUI && window.MediCareUI.renderRoutines) {
+                window.MediCareUI.renderRoutines();
+            }
+        }
+        if (currentDateStr) {
+            lastCheckedDateStr = currentDateStr;
+        }
 
         // Date display
         const dateEl = document.getElementById('headerCurrentDate');

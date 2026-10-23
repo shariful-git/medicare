@@ -433,6 +433,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 
 // Get all routines of active user
 app.get('/api/routines', authMiddleware, (req, res) => {
+    const today = getTodayDateStr();
     if (dbDriver === 'sqlite3') {
         db.all('SELECT * FROM routines WHERE user_id = ? ORDER BY time ASC', [req.userId], (err, rows) => {
             if (err) return res.status(500).json({ success: false, error: err.message });
@@ -441,6 +442,7 @@ app.get('/api/routines', authMiddleware, (req, res) => {
                 try { times = r.times_json ? JSON.parse(r.times_json) : [r.time]; } catch (e) { times = [r.time]; }
                 let takenHistory = {};
                 try { takenHistory = r.taken_history ? JSON.parse(r.taken_history) : {}; } catch (e) { takenHistory = {}; }
+                const isTakenToday = Array.isArray(takenHistory[today]) && takenHistory[today].length >= (times.length || 1);
                 return {
                     id: r.id,
                     name: r.name,
@@ -450,7 +452,7 @@ app.get('/api/routines', authMiddleware, (req, res) => {
                     time: r.time,
                     stock: r.stock,
                     notes: r.notes,
-                    takenToday: Boolean(r.taken_today),
+                    takenToday: isTakenToday,
                     lastTakenDate: r.last_taken_date,
                     createdAt: r.created_at,
                     startDate: r.start_date || '',
@@ -470,6 +472,7 @@ app.get('/api/routines', authMiddleware, (req, res) => {
             try { times = r.times_json ? JSON.parse(r.times_json) : [r.time]; } catch (e) { times = [r.time]; }
             let takenHistory = {};
             try { takenHistory = r.taken_history ? JSON.parse(r.taken_history) : {}; } catch (e) { takenHistory = {}; }
+            const isTakenToday = Array.isArray(takenHistory[today]) && takenHistory[today].length >= (times.length || 1);
             return {
                 id: r.id,
                 name: r.name,
@@ -479,7 +482,7 @@ app.get('/api/routines', authMiddleware, (req, res) => {
                 time: r.time,
                 stock: r.stock,
                 notes: r.notes,
-                takenToday: Boolean(r.taken_today),
+                takenToday: isTakenToday,
                 lastTakenDate: r.last_taken_date,
                 createdAt: r.created_at,
                 startDate: r.start_date || '',
@@ -492,7 +495,12 @@ app.get('/api/routines', authMiddleware, (req, res) => {
         });
         res.json({ success: true, routines: list });
     } else {
-        const list = fallbackMemoryDb.routines.filter(r => r.user_id === req.userId);
+        const list = fallbackMemoryDb.routines.filter(r => r.user_id === req.userId).map(r => {
+            const times = Array.isArray(r.times) ? r.times : (r.time ? [r.time] : ['08:00']);
+            const history = r.takenHistory && typeof r.takenHistory === 'object' ? r.takenHistory : {};
+            const isTakenToday = Array.isArray(history[today]) && history[today].length >= (times.length || 1);
+            return { ...r, takenToday: isTakenToday };
+        });
         res.json({ success: true, routines: list });
     }
 });

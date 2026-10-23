@@ -99,12 +99,8 @@ window.MediCareStore = (function () {
             try { takenHistory = JSON.parse(takenHistory); } catch (e) { takenHistory = {}; }
         }
 
-        if (r.takenToday && r.lastTakenDate) {
-            const todayKey = getTodayDateStr();
-            if (!takenHistory[todayKey]) {
-                takenHistory[todayKey] = [...times];
-            }
-        }
+        const todayKey = getTodayDateStr();
+        const isTakenToday = Array.isArray(takenHistory[todayKey]) && takenHistory[todayKey].length >= times.length;
 
         return {
             ...r,
@@ -114,7 +110,8 @@ window.MediCareStore = (function () {
             frequency,
             times,
             time: r.time || times[0],
-            takenHistory
+            takenHistory,
+            takenToday: isTakenToday
         };
     }
 
