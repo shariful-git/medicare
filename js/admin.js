@@ -1255,6 +1255,55 @@ window.AdminApp = (function () {
     }
 
     // TAB 5: DATABASE MAINTENANCE
+    async function downloadDatabaseBackup() {
+        if (!isServerMode) {
+            // Offline sandbox backup
+            const offlineData = {
+                exportedAt: new Date().toISOString(),
+                users: getLocalUsers(),
+                routines: getLocalRoutines(),
+                logs: getLocalLogs()
+            };
+            const jsonStr = JSON.stringify(offlineData, null, 2);
+            downloadFile(jsonStr, `medicare-offline-backup-${Date.now()}.json`, 'application/json');
+            showToast('অফলাইন ডাটাবেজ ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে।', 'success');
+            return;
+        }
+
+        try {
+            showToast('ডাটাবেজ ব্যাকআপ প্রস্তুত হচ্ছে...', 'info');
+            const res = await fetch(`${API_BASE}/api/admin/backup-db`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                showToast(errData.error || 'ব্যাকআপ ফাইল ডাউনলোডে সমস্যা হয়েছে। অনুমতি যাচাই করুন।', 'error');
+                return;
+            }
+
+            const blob = await res.blob();
+            const disposition = res.headers.get('content-disposition') || '';
+            let filename = `medicare-backup-${Date.now()}.sqlite`;
+            const match = disposition.match(/filename="?([^";]+)"?/);
+            if (match && match[1]) filename = match[1];
+
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+
+            showToast('নিরাপদ SQLite ডাটাবেজ ব্যাকআপ সফলভাবে ডাউনলোড হয়েছে!', 'success');
+        } catch (e) {
+            showToast('সার্ভার যোগাযোগ ত্রুটি। পুনরায় চেষ্টা করুন।', 'error');
+        }
+    }
+
     function vacuumDatabase() {
         showConfirmModal({
             title: 'ডাটাবেজ অপ্টিমাইজ ও ভ্যাকুয়াম করবেন?',
@@ -1500,6 +1549,7 @@ window.AdminApp = (function () {
         nextLogsPage,
         exportLogsJson,
         exportLogsCsv,
+        downloadDatabaseBackup,
         vacuumDatabase,
         showConfirmModal,
         closeConfirmModal,

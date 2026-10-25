@@ -101,6 +101,21 @@ medi/
 
 ---
 
+---
+
+## 🔒 Database Protection & Safe Backup Architecture
+
+1. **Zero Raw Access Shield**:
+   - সরাসরি ব্রাউজার থেকে `http://localhost:3000/medicare.sqlite`, `medicare.sqlite.json`, `.env`, বা `.git` রিকোয়েস্ট পাঠালে সার্ভার সরাসরি **`403 Forbidden`** ফেরত দেয়।
+   - বহিরাগত কোনো অনিবন্ধিত ভিজিটর বা ক্রলার ডাটাবেজ ফাইল সরাসরি ডাউনলোড করতে পারে না।
+
+2. **Authorized Admin Backup Engine**:
+   - ডাটাবেজ ডাউনলোড করার একমাত্র বৈধ রুট হলো `/api/admin/backup-db`।
+   - এই রুটে ক্রিপ্টোগ্রাফিক HMAC ভেরিফাইড **Admin Bearer Token** ছাড়া কোনো রিকোয়েস্ট অনুমোদন পায় না (`401/403` ব্লক)।
+   - অ্যাডমিন প্যানেল থেকে `AdminApp.downloadDatabaseBackup()` ফাংশনের মাধ্যমে হেডার যুক্ত করে সুরক্ষিতভাবে `.sqlite` ফাইল স্ন্যাপশট ডাউনলোড করা যায়।
+
+---
+
 ## 🚀 How to Run the Backend Server
 
 ```bash

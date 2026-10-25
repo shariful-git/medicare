@@ -319,10 +319,10 @@
 
                     <!-- DB Quick Actions -->
                     <div class="flex flex-wrap items-center gap-2 pt-2">
-                        <a href="/api/admin/backup-db" class="min-h-[38px] px-3.5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold transition flex items-center gap-2 active:scale-95 shadow-xs">
+                        <button type="button" onclick="AdminApp.downloadDatabaseBackup()" class="min-h-[38px] px-3.5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold transition flex items-center gap-2 active:scale-95 shadow-xs">
                             <i data-lucide="download" class="w-3.5 h-3.5"></i>
                             <span id="btnBackupDbQuick">১-ক্লিকে SQLite ব্যাকআপ (.sqlite)</span>
-                        </a>
+                        </button>
                         <button onclick="AdminApp.vacuumDatabase()" class="min-h-[38px] px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-2 active:scale-95 shadow-xs">
                             <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
                             <span id="btnVacuumQuick">ডাটাবেজ ভ্যাকুয়াম / অপ্টিমাইজ</span>
@@ -540,10 +540,10 @@
                         মেডিকেয়ারের প্রকৃত SQLite ডাটাবেজ ফাইল (<code class="font-mono text-sky-600 font-bold">medicare.sqlite</code>) ডাউনলোড করে অফলাইনে নিরাপদ ব্যাকআপ রাখুন। যেকোনো সময় এটি দিয়ে পুরো সিস্টেমের সকল রোগী ও প্রেসক্রিপশন রিস্টোর করা সম্ভব।
                     </p>
                     <div class="pt-2">
-                        <a href="/api/admin/backup-db" class="w-full min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                        <button type="button" onclick="AdminApp.downloadDatabaseBackup()" class="w-full min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
                             <i data-lucide="download-cloud" class="w-4 h-4"></i>
                             <span id="btnDownloadSqliteFile">ডাটাবেজ (.sqlite) ডাউনলোড করুন</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
 

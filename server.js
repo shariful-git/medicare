@@ -8,9 +8,79 @@ const fs = require('fs');
 const crypto = require('crypto');
 const http = require('http');
 
+// Lightweight Native .env File Loader (Zero Dependencies)
+function loadEnvFile() {
+    const envPath = path.join(__dirname, '.env');
+    if (fs.existsSync(envPath)) {
+        try {
+            const content = fs.readFileSync(envPath, 'utf8');
+            content.split('\n').forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith('#')) {
+                    const eqIdx = trimmed.indexOf('=');
+                    if (eqIdx !== -1) {
+                        const key = trimmed.slice(0, eqIdx).trim();
+                        const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+                        if (key && process.env[key] === undefined) {
+                            process.env[key] = val;
+                        }
+                    }
+                }
+            });
+        } catch (e) {}
+    }
+}
+loadEnvFile();
+
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'medicare.sqlite');
-const SERVER_SECRET = process.env.MEDICARE_SECRET || 'medicare_clinical_suite_secret_2026';
+const DB_FILE = process.env.DB_FILE ? path.resolve(__dirname, process.env.DB_FILE) : path.join(__dirname, 'medicare.sqlite');
+const SERVER_SECRET = process.env.MEDICARE_SECRET || 'medicare_prod_clinical_secret_default_key_2026';
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// Production In-Memory Rate Limiter (Brute-Force & DoS Mitigation)
+const rateLimitMap = new Map();
+
+function checkRateLimit(key, maxAttempts = 15, windowMs = 15 * 60 * 1000) {
+    const now = Date.now();
+    const entry = rateLimitMap.get(key) || { count: 0, resetAt: now + windowMs };
+    if (now > entry.resetAt) {
+        entry.count = 1;
+        entry.resetAt = now + windowMs;
+        rateLimitMap.set(key, entry);
+        return { allowed: true, remaining: maxAttempts - 1 };
+    }
+    entry.count += 1;
+    rateLimitMap.set(key, entry);
+    if (entry.count > maxAttempts) {
+        return { allowed: false, retryAfterSec: Math.ceil((entry.resetAt - now) / 1000) };
+    }
+    return { allowed: true, remaining: maxAttempts - entry.count };
+}
+
+// Clean up stale rate limits every 10 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of rateLimitMap.entries()) {
+        if (now > v.resetAt) rateLimitMap.delete(k);
+    }
+}, 10 * 60 * 1000).unref();
+
+// Standard Production Security Headers (OWASP Hardening)
+function applySecurityHeaders(res) {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    if (process.env.ENFORCE_HSTS === 'true') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    }
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; frame-ancestors 'none';"
+    );
+}
 
 let app;
 let isNativeHttpServer = false;
@@ -19,10 +89,36 @@ try {
     const express = require('express');
     const cors = require('cors');
     app = express();
+    app.disable('x-powered-by');
     app.use(cors());
-    app.use(express.json());
-    app.use(express.static(__dirname));
-    console.log('✓ Express framework loaded successfully.');
+    app.use((req, res, next) => {
+        applySecurityHeaders(res);
+        next();
+    });
+
+    // STRICT DATABASE & SENSITIVE FILE PROTECTION (Express Layer)
+    // Completely blocks direct download of .sqlite, .env, .git, etc.
+    app.use((req, res, next) => {
+        const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const pathname = decodeURIComponent(parsedUrl.pathname);
+        const normalized = path.normalize(pathname).replace(/^[/\\]+/, '');
+        const isForbidden = /(\.sqlite|\.sqlite3|\.sqlite-journal|\.sqlite-wal|\.env|\.git|package\.json|package-lock\.json|server\.js)/i.test(normalized);
+        
+        if (isForbidden && !pathname.startsWith('/api/admin/backup-db')) {
+            return res.status(403).json({
+                success: false,
+                error: 'সুরক্ষিত ফাইল: সরাসরি ব্রাউজার থেকে ডাটাবেজ বা সিস্টেম ফাইল ডাউনলোড নিষিদ্ধ (Access Forbidden).'
+            });
+        }
+        next();
+    });
+
+    app.use(express.json({ limit: '2mb' }));
+    app.use(express.static(__dirname, {
+        dotfiles: 'deny',
+        index: ['index.html']
+    }));
+    console.log('✓ Express framework loaded with production security headers & database shield.');
 } catch (e) {
     // Zero-dependency native Node.js HTTP framework (no npm install required!)
     isNativeHttpServer = true;
@@ -110,6 +206,7 @@ function createNativeHttpApp() {
         delete: (p, ...h) => addRoute('DELETE', p, h),
         listen: (port, cb) => {
             const server = http.createServer((req, res) => {
+                applySecurityHeaders(res);
                 res.setHeader('Access-Control-Allow-Origin', '*');
                 res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -141,8 +238,21 @@ function createNativeHttpApp() {
                 };
 
                 const chunks = [];
-                req.on('data', chunk => chunks.push(chunk));
+                let totalBytes = 0;
+                const MAX_PAYLOAD = 2 * 1024 * 1024; // 2MB DoS limit
+
+                req.on('data', chunk => {
+                    totalBytes += chunk.length;
+                    if (totalBytes > MAX_PAYLOAD) {
+                        res.status(413).json({ success: false, error: 'Payload Too Large' });
+                        req.destroy();
+                        return;
+                    }
+                    chunks.push(chunk);
+                });
+
                 req.on('end', () => {
+                    if (totalBytes > MAX_PAYLOAD) return;
                     const rawBody = Buffer.concat(chunks).toString('utf8');
                     req.body = {};
                     if (rawBody && (req.headers['content-type'] || '').includes('application/json')) {
@@ -185,7 +295,18 @@ function createNativeHttpApp() {
                         return;
                     }
 
-                    const safePath = path.normalize(path.join(__dirname, pathname));
+                    // Strict File Protection: Never expose raw databases, env files, or sensitive sources over static HTTP
+                    const normalized = path.normalize(pathname).replace(/^[/\\]+/, '');
+                    const isForbiddenFile = /(\.sqlite|\.sqlite3|\.sqlite-journal|\.sqlite-wal|\.sqlite\.json|\.env|\.git|package\.json|package-lock\.json|server\.js)/i.test(normalized);
+                    if (isForbiddenFile) {
+                        res.status(403).json({
+                            success: false,
+                            error: 'সুরক্ষিত ফাইল: সরাসরি ব্রাউজার থেকে ডাটাবেজ বা সিস্টেম ফাইল ডাউনলোড নিষিদ্ধ (Access Forbidden).'
+                        });
+                        return;
+                    }
+
+                    const safePath = path.normalize(path.join(__dirname, normalized));
                     if (safePath.startsWith(__dirname) && fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
                         serveFile(safePath, res);
                         return;
@@ -380,28 +501,31 @@ function initTablesSqlite3() {
         // Check and seed default demo user (assigned admin privileges)
         db.get('SELECT id, role FROM users WHERE username = ?', ['demo'], (err, row) => {
             if (!row) {
-                const { hash, salt } = hashPassword('123456');
+                const demoPass = process.env.DEMO_USER_PASS || '123456';
+                const { hash, salt } = hashPassword(demoPass);
                 const userId = 'user_demo_01';
                 db.run(
                     'INSERT INTO users (id, username, full_name, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     [userId, 'demo', 'ডা. শরিফুল ইসলাম (Dr. Shariful)', hash, salt, new Date().toISOString(), 'admin']
                 );
-                console.log('Default Demo user created: username: demo | password: 123456 (Role: admin)');
+                console.log(`Default Demo user created: username: demo (Role: admin)`);
             } else if (row.role !== 'admin') {
                 db.run('UPDATE users SET role = "admin" WHERE username = "demo"');
             }
         });
 
-        // Check and seed dedicated admin user
-        db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
+        // Check and seed dedicated admin user (configurable via .env)
+        const adminUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+        const adminPass = process.env.ADMIN_DEFAULT_PASS || (IS_PROD ? 'Admin@MediCare2026!' : 'admin123');
+        db.get('SELECT id FROM users WHERE username = ?', [adminUser], (err, row) => {
             if (!row) {
-                const { hash, salt } = hashPassword('admin123');
+                const { hash, salt } = hashPassword(adminPass);
                 const userId = 'user_admin_01';
                 db.run(
                     'INSERT INTO users (id, username, full_name, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [userId, 'admin', 'সিস্টেম অ্যাডমিনিস্ট্রেটর (MediCare Admin)', hash, salt, new Date().toISOString(), 'admin']
+                    [userId, adminUser, 'সিস্টেম অ্যাডমিনিস্ট্রেটর (MediCare Admin)', hash, salt, new Date().toISOString(), 'admin']
                 );
-                console.log('Dedicated Admin user created: username: admin | password: admin123 (Role: admin)');
+                console.log(`Dedicated Admin user initialized: username: ${adminUser} (Role: admin)`);
             }
         });
     });
@@ -464,9 +588,10 @@ function initTablesNodeSqlite() {
         } catch (e) {}
     });
 
+    const demoPass = process.env.DEMO_USER_PASS || '123456';
     const checkDemo = db.prepare('SELECT id, role FROM users WHERE username = ?').get('demo');
     if (!checkDemo) {
-        const { hash, salt } = hashPassword('123456');
+        const { hash, salt } = hashPassword(demoPass);
         const userId = 'user_demo_01';
         db.prepare('INSERT INTO users (id, username, full_name, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
             userId, 'demo', 'ডা. শরিফুল ইসলাম (Dr. Shariful)', hash, salt, new Date().toISOString(), 'admin'
@@ -475,12 +600,14 @@ function initTablesNodeSqlite() {
         db.prepare('UPDATE users SET role = "admin" WHERE username = "demo"').run();
     }
 
-    const checkAdmin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
+    const adminUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+    const adminPass = process.env.ADMIN_DEFAULT_PASS || (IS_PROD ? 'Admin@MediCare2026!' : 'admin123');
+    const checkAdmin = db.prepare('SELECT id FROM users WHERE username = ?').get(adminUser);
     if (!checkAdmin) {
-        const { hash, salt } = hashPassword('admin123');
+        const { hash, salt } = hashPassword(adminPass);
         const userId = 'user_admin_01';
         db.prepare('INSERT INTO users (id, username, full_name, password_hash, salt, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-            userId, 'admin', 'সিস্টেম অ্যাডমিনিস্ট্রেটর (MediCare Admin)', hash, salt, new Date().toISOString(), 'admin'
+            userId, adminUser, 'সিস্টেম অ্যাডমিনিস্ট্রেটর (MediCare Admin)', hash, salt, new Date().toISOString(), 'admin'
         );
     }
 }
@@ -499,9 +626,10 @@ function initFallbackFileDb() {
             if (!fallbackMemoryDb.hydration) fallbackMemoryDb.hydration = [];
         } catch (e) {}
     }
+    const demoPass = process.env.DEMO_USER_PASS || '123456';
     const demo = fallbackMemoryDb.users.find(u => u.username === 'demo');
     if (!demo) {
-        const { hash, salt } = hashPassword('123456');
+        const { hash, salt } = hashPassword(demoPass);
         const userId = 'user_demo_01';
         fallbackMemoryDb.users.push({
             id: userId,
@@ -518,13 +646,15 @@ function initFallbackFileDb() {
         saveFallbackDb();
     }
 
-    const admin = fallbackMemoryDb.users.find(u => u.username === 'admin');
+    const adminUser = (process.env.ADMIN_DEFAULT_USER || 'admin').trim().toLowerCase();
+    const adminPass = process.env.ADMIN_DEFAULT_PASS || (IS_PROD ? 'Admin@MediCare2026!' : 'admin123');
+    const admin = fallbackMemoryDb.users.find(u => u.username === adminUser);
     if (!admin) {
-        const { hash, salt } = hashPassword('admin123');
+        const { hash, salt } = hashPassword(adminPass);
         const userId = 'user_admin_01';
         fallbackMemoryDb.users.push({
             id: userId,
-            username: 'admin',
+            username: adminUser,
             full_name: 'সিস্টেম অ্যাডমিনিস্ট্রেটর (MediCare Admin)',
             password_hash: hash,
             salt: salt,
@@ -550,19 +680,43 @@ function getTodayDateStr() {
     return `${y}-${m}-${d}`;
 }
 
-// ==========================================
+// Helper to get client IP for rate limiting
+function getClientIp(req) {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) return forwarded.split(',')[0].trim();
+    return req.socket ? req.socket.remoteAddress : '127.0.0.1';
+}
+
 // 3. AUTHENTICATION API ROUTES
-// ==========================================
 
 // Register
 app.post('/api/auth/register', (req, res) => {
+    const ip = getClientIp(req);
+    const limit = checkRateLimit(`reg_${ip}`, 8, 15 * 60 * 1000);
+    if (!limit.allowed) {
+        return res.status(429).json({
+            success: false,
+            error: `খুব বেশি রেজিস্ট্রেশন অনুরোধ পাঠানো হয়েছে। অনুগ্রহ করে ${limit.retryAfterSec} সেকেন্ড পর পুনরায় চেষ্টা করুন।`
+        });
+    }
+
     const { username, full_name, password } = req.body;
     if (!username || !password || !full_name) {
         return res.status(400).json({ success: false, error: 'ইউজারনেম, নাম এবং পাসওয়ার্ড আবশ্যক।' });
     }
 
-    const cleanUsername = username.trim().toLowerCase();
-    const cleanName = full_name.trim();
+    const cleanUsername = String(username).trim().toLowerCase();
+    const cleanName = String(full_name).trim().replace(/[<>]/g, ''); // Basic XSS sanitization
+    
+    // Strict username validation (alphanumeric, dots, underscores, hyphens, 3-30 chars)
+    if (!/^[a-z0-9_.-]{3,30}$/.test(cleanUsername)) {
+        return res.status(400).json({ success: false, error: 'ইউজারনেম ৩-৩০ অক্ষরের হতে হবে এবং শুধুমাত্র ইংরেজি বর্ণ, সংখ্যা, ডট ও আন্ডারস্কোর গ্রহণযোগ্য।' });
+    }
+
+    if (String(password).length < 4) {
+        return res.status(400).json({ success: false, error: 'পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।' });
+    }
+
     const defaultRole = (cleanUsername === 'admin' || cleanUsername === 'demo') ? 'admin' : 'user';
 
     if (dbDriver === 'sqlite3') {
@@ -610,12 +764,21 @@ app.post('/api/auth/register', (req, res) => {
 
 // Login
 app.post('/api/auth/login', (req, res) => {
+    const ip = getClientIp(req);
+    const limit = checkRateLimit(`login_${ip}`, 12, 10 * 60 * 1000);
+    if (!limit.allowed) {
+        return res.status(429).json({
+            success: false,
+            error: `খুব বেশি বার ভুল চেষ্টা করা হয়েছে। অনুগ্রহ করে ${limit.retryAfterSec} সেকেন্ড অপেক্ষা করুন।`
+        });
+    }
+
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ success: false, error: 'ইউজারনেম এবং পাসওয়ার্ড দিন।' });
     }
 
-    const cleanUsername = username.trim().toLowerCase();
+    const cleanUsername = String(username).trim().toLowerCase();
 
     if (dbDriver === 'sqlite3') {
         db.get('SELECT * FROM users WHERE username = ?', [cleanUsername], (err, user) => {
@@ -2037,7 +2200,8 @@ app.post('/api/admin/vacuum-db', adminAuthMiddleware, (req, res) => {
 app.listen(PORT, () => {
     console.log(`\n======================================================`);
     console.log(`🩺 MediCare Clinical Suite is running on: http://localhost:${PORT}`);
-    console.log(`💾 Native SQLite database file: ${DB_FILE}`);
-    console.log(`👤 Multi-Device Sync Ready. Default Demo -> demo / 123456`);
+    console.log(`🔒 Security Status: OWASP Headers, CSP, Rate-Limiting & Path Isolation Active`);
+    console.log(`💾 Database File: ${DB_FILE} (Driver: ${dbDriver || 'initializing...'})`);
+    console.log(`🛡️ Admin Portal: http://localhost:${PORT}/admin`);
     console.log(`======================================================\n`);
 });

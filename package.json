@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "prod": "node --env-file=.env server.js",
     "dev": "node server.js"
   },
   "keywords": [
