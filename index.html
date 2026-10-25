@@ -117,6 +117,12 @@
                     <span id="notiPermLabel" data-i18n="alert_btn">অ্যালার্ট</span>
                 </button>
 
+                <!-- Admin Panel Link -->
+                <a href="/admin" id="headerAdminBtn" title="অ্যাডমিন প্যানেল (/admin)" class="min-h-[40px] px-2.5 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition flex items-center gap-1.5 active:scale-95 shadow-xs font-bold text-xs">
+                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400"></i>
+                    <span class="hidden sm:inline">অ্যাডমিন</span>
+                </a>
+
                 <!-- User Profile / Auth Button -->
                 <div class="relative">
                     <button onclick="window.MediCareAuth.openAuthModal()" id="userAuthBtn" class="min-h-[40px] px-3 text-xs font-bold rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white transition flex items-center gap-1.5 active:scale-95 shadow-xs">
@@ -137,6 +143,12 @@
                             <div class="px-3.5 py-2.5 border-b border-slate-200 dark:border-slate-800">
                                 <p class="text-xs font-bold text-slate-900 dark:text-white truncate" id="dropdownUserName">User</p>
                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono" id="dropdownUserHandle">@user</p>
+                            </div>
+                            <div class="py-1 border-b border-slate-100 dark:border-slate-800">
+                                <a href="/admin" class="w-full text-left px-3.5 py-2 text-xs font-bold text-[#0284c7] dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 flex items-center gap-2 transition">
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-rose-600 dark:text-rose-400"></i>
+                                    <span>অ্যাডমিন প্যানেল (/admin)</span>
+                                </a>
                             </div>
                             <div class="py-1">
                                 <button onclick="window.MediCareAuth.logout()" class="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition">

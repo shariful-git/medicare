@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="bn" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f2744">
+    <meta name="description" content="মেডিকেয়ার - অ্যাডমিন প্যানেল | ক্লিনিক্যাল ড্যাশবোর্ড, ইউজার ও প্রেসক্রিপশন মনিটরিং">
+    <title>মেডিকেয়ার অ্যাডমিন | Clinical Admin Suite</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script>
+        (function() {
+            const origWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) {
+                    return;
+                }
+                origWarn.apply(console, args);
+            };
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Anek Bangla & Plus Jakarta Sans & JetBrains Mono for Digits -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Anek Bangla"', '"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        clinicalNavy: {
+                            800: '#162a45',
+                            900: '#0f2744',
+                            950: '#09182b',
+                        },
+                        clinicalBlue: {
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Boxy Clinical Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .badge-pulse {
+            animation: pulseSlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulseSlow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .75; transform: scale(0.98); }
+        }
+        .admin-nav-btn.active {
+            background-color: #0284c7;
+            color: #ffffff !important;
+            border-color: #0284c7;
+        }
+        .dark .admin-nav-btn.active {
+            background-color: #0284c7;
+            color: #ffffff !important;
+            border-color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-sky-600 selection:text-white transition-colors duration-200">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
+            <!-- Brand & Badge -->
+            <div class="flex items-center gap-3">
+                <a href="/admin" class="flex items-center gap-2.5 group">
+                    <div class="w-10 h-10 rounded-md bg-[#0f2744] dark:bg-[#0284c7] text-white flex items-center justify-center shrink-0 border border-slate-300/40 dark:border-sky-500/30 shadow-xs">
+                        <i data-lucide="shield-alert" class="w-6 h-6 stroke-[2.3]"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-lg text-slate-900 dark:text-white leading-tight">মেডিকেয়ার</span>
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-200 dark:border-rose-800 uppercase tracking-wider">অ্যাডমিন প্যানেল</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            <span class="hidden sm:inline" id="adminHeaderSub">সেন্ট্রাল ক্লিনিক্যাল ও সার্ভার কন্ট্রোল</span>
+                            <span class="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                            <span class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
+                                <span class="status-indicator"></span>
+                                <span id="serverDriverBadge">SQLite3 Server</span>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Controls (Clock, Language, Theme, Patient Portal Link, User Auth) -->
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <!-- Live System Clock -->
+                <div class="text-right hidden lg:block pr-3 border-r border-slate-300 dark:border-slate-800">
+                    <span id="adminLiveClock" class="font-mono text-sm font-bold text-[#0f2744] dark:text-sky-400 tracking-wider">00:00:00</span>
+                    <span class="text-[10px] block text-slate-400 font-medium" id="lblSysTime">সিস্টেম সময়</span>
+                </div>
+
+                <!-- Language Toggle Button -->
+                <button onclick="AdminApp.toggleLanguage()" id="langToggleBtn" title="Switch Language (বাং / EN)" class="min-h-[38px] px-2.5 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition flex items-center gap-1.5 active:scale-95 shadow-xs font-bold text-xs">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-[#0284c7] dark:text-sky-400"></i>
+                    <span id="currentLangLabel">বাং</span>
+                </button>
+
+                <!-- Dark / Light Mode Toggle -->
+                <button onclick="AdminApp.toggleTheme()" title="থিম পরিবর্তন করুন" class="min-h-[38px] min-w-[38px] p-2 rounded-md border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center justify-center active:scale-95 shadow-xs">
+                    <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Go to Patient Portal Link -->
+                <a href="/" target="_blank" class="min-h-[38px] px-3 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5 text-xs font-bold shadow-xs active:scale-95">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+                    <span id="btnPatientApp">রোগী পোর্টাল</span>
+                </a>
+
+                <!-- Admin Profile / Logout Button -->
+                <div id="adminUserArea" class="flex items-center gap-2">
+                    <div class="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-300 dark:border-slate-800 text-xs font-semibold">
+                        <div class="w-7 h-7 rounded bg-[#0f2744] dark:bg-sky-600 text-white flex items-center justify-center font-bold text-xs uppercase" id="adminUserInitial">A</div>
+                        <div class="text-left hidden md:block">
+                            <p class="font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[120px]" id="adminUserName">Admin</p>
+                            <p class="text-[10px] text-slate-400 leading-tight" id="adminUserRole">Super Administrator</p>
+                        </div>
+                    </div>
+                    <button onclick="AdminApp.logout()" title="লগআউট" class="min-h-[38px] px-2.5 rounded-md border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 transition flex items-center gap-1 text-xs font-bold active:scale-95">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline" id="lblLogout">লগআউট</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+        <!-- Offline Warning Alert Banner (Visible when node server.js is not running) -->
+        <div id="offlineNoticeBanner" class="hidden p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-xs">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                <div>
+                    <span class="font-bold">সেন্ট্রাল নোড সার্ভার অফলাইনে রয়েছে:</span>
+                    <span class="text-amber-800 dark:text-amber-300"> অ্যাডমিন প্যানেল লোকাল মোডে চলছে। সেন্ট্রাল SQLite ডাটাবেজ সক্রিয় করতে টার্মিনালে <code class="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/80 font-mono font-bold text-amber-900 dark:text-amber-100">node server.js</code> চালান।</span>
+                </div>
+            </div>
+            <button onclick="AdminApp.retryServerConnection()" class="min-h-[32px] px-3 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold transition flex items-center gap-1.5 shrink-0 text-xs">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>পুনরায় সার্ভার চেক করুন</span>
+            </button>
+        </div>
+
+        <!-- Top Navigation Bar (Tabs) -->
+        <nav class="bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-slate-300 dark:border-slate-800 shadow-xs flex items-center gap-1.5 overflow-x-auto">
+            <button onclick="AdminApp.switchTab('overview')" id="tabBtn-overview" class="admin-nav-btn active min-h-[42px] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-bold border border-transparent transition flex items-center gap-2 shrink-0">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span id="navOverview">সারসংক্ষেপ ও ডায়াগনস্টিকস</span>
+            </button>
+            <button onclick="AdminApp.switchTab('users')" id="tabBtn-users" class="admin-nav-btn min-h-[42px] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent transition flex items-center gap-2 shrink-0">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span id="navUsers">রোগী ও ইউজার তালিকা</span>
+                <span id="badgeUsersCount" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200">0</span>
+            </button>
+            <button onclick="AdminApp.switchTab('routines')" id="tabBtn-routines" class="admin-nav-btn min-h-[42px] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent transition flex items-center gap-2 shrink-0">
+                <i data-lucide="pill" class="w-4 h-4"></i>
+                <span id="navRoutines">সার্বজনীন প্রেসক্রিপশন ও স্টক</span>
+                <span id="badgeRoutinesCount" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200">0</span>
+            </button>
+            <button onclick="AdminApp.switchTab('logs')" id="tabBtn-logs" class="admin-nav-btn min-h-[42px] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent transition flex items-center gap-2 shrink-0">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+                <span id="navLogs">ক্লিনিক্যাল অডিট ও সেবন লগ</span>
+            </button>
+            <button onclick="AdminApp.switchTab('database')" id="tabBtn-database" class="admin-nav-btn min-h-[42px] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent transition flex items-center gap-2 shrink-0">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                <span id="navDatabase">ডাটাবেজ ও ব্যাকআপ</span>
+            </button>
+        </nav>
+
+        <!-- ============================================================= -->
+        <!-- TAB 1: OVERVIEW & SYSTEM DIAGNOSTICS                         -->
+        <!-- ============================================================= -->
+        <section id="view-overview" class="space-y-5">
+            <!-- Top Metric Cards Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <!-- Total Patients -->
+                <div class="box-panel p-4 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400" id="cardLblPatients">নিবন্ধিত রোগী</span>
+                        <div class="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 flex items-center justify-center">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-mono text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white" id="statTotalUsers">0</div>
+                        <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                            <span class="font-semibold text-sky-600 dark:text-sky-400" id="statTotalAdmins">0 অ্যাডমিন</span>
+                            <span>•</span>
+                            <span id="statRegularUsers">0 সাধারণ রোগী</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Active Prescriptions -->
+                <div class="box-panel p-4 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400" id="cardLblRoutines">সক্রিয় প্রেসক্রিপশন</span>
+                        <div class="w-8 h-8 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 flex items-center justify-center">
+                            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-mono text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white" id="statTotalRoutines">0</div>
+                        <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1">
+                            <span class="text-emerald-600 font-semibold" id="cardLblRoutineSub">দৈনিক রুটিন সিডিউল</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Adherence Rate -->
+                <div class="box-panel p-4 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400" id="cardLblAdherence">আজকের সেবন হার</span>
+                        <div class="w-8 h-8 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900 flex items-center justify-center">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-2">
+                            <div class="font-mono text-2xl sm:text-3xl font-extrabold text-[#0284c7] dark:text-sky-400" id="statAdherenceRate">0%</div>
+                            <span class="text-xs text-slate-500 font-mono" id="statTodayDoses">(0 সম্পন্ন)</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+                            <div id="statAdherenceBar" class="bg-[#0284c7] h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Urgent Low Stock Alert -->
+                <div class="box-panel p-4 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400" id="cardLblLowStock">স্টক সতর্কতা (≤ ৩)</span>
+                        <div class="w-8 h-8 rounded-md bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <div class="font-mono text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400" id="statLowStock">0</div>
+                            <span id="statLowStockBadge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800 badge-pulse">জরুরি রিঅর্ডার</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1" id="lblLowStockSub">সতর্কতামূলক স্টক শেষ পর্যায়ে</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server & Database System Diagnostics -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- System Diagnostics Card -->
+                <div class="lg:col-span-2 box-panel p-5 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-slate-300 dark:border-slate-700">
+                                <i data-lucide="cpu" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900 dark:text-white" id="titleServerHealth">সার্ভার ও সিস্টেম ডায়াগনস্টিকস</h3>
+                                <p class="text-[11px] text-slate-500" id="subServerHealth">সেন্ট্রাল নোড ও এসকিউলাইট ফ্রেমওয়ার্ক স্ট্যাটাস</p>
+                            </div>
+                        </div>
+                        <button onclick="AdminApp.loadOverview()" title="রিফ্রেশ" class="min-h-[36px] px-2.5 rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            <span id="btnRefreshStats">রিফ্রেশ</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblUptime">সার্ভার আপটাইম</span>
+                            <span class="font-mono text-sm font-bold text-slate-800 dark:text-slate-200" id="diagUptime">--</span>
+                        </div>
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblNodeVer">Node.js সংস্করণ</span>
+                            <span class="font-mono text-sm font-bold text-slate-800 dark:text-slate-200" id="diagNodeVer">--</span>
+                        </div>
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblMemUsage">মেমোরি (RAM) RSS</span>
+                            <span class="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400" id="diagMemRss">--</span>
+                        </div>
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblDbDriver">ডাটাবেজ ড্রাইভার</span>
+                            <span class="font-mono text-sm font-bold text-sky-600 dark:text-sky-400" id="diagDbDriver">--</span>
+                        </div>
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblDbSize">ডিস্কে ডাটাবেজ সাইজ</span>
+                            <span class="font-mono text-sm font-bold text-slate-800 dark:text-slate-200" id="diagDbSize">--</span>
+                        </div>
+                        <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                            <span class="text-[11px] text-slate-400 block font-medium" id="lblPlatform">হোস্ট ওএস প্ল্যাটফর্ম</span>
+                            <span class="font-mono text-sm font-bold text-slate-800 dark:text-slate-200" id="diagPlatform">--</span>
+                        </div>
+                    </div>
+
+                    <!-- DB Quick Actions -->
+                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                        <a href="/api/admin/backup-db" class="min-h-[38px] px-3.5 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold transition flex items-center gap-2 active:scale-95 shadow-xs">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            <span id="btnBackupDbQuick">১-ক্লিকে SQLite ব্যাকআপ (.sqlite)</span>
+                        </a>
+                        <button onclick="AdminApp.vacuumDatabase()" class="min-h-[38px] px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-2 active:scale-95 shadow-xs">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span id="btnVacuumQuick">ডাটাবেজ ভ্যাকুয়াম / অপ্টিমাইজ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Summary Feed: Recent 5 Patient Logs -->
+                <div class="box-panel p-5 space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800 mb-3">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                <i data-lucide="activity" class="w-4 h-4 text-emerald-500"></i>
+                                <span id="titleRecentAudit">লাইভ ডোজ ও এক্টিভিটি ফিড</span>
+                            </h3>
+                            <button onclick="AdminApp.switchTab('logs')" class="text-xs text-sky-600 hover:underline font-bold" id="linkViewAllLogs">সব দেখুন →</button>
+                        </div>
+                        <div id="recentAuditList" class="space-y-2.5">
+                            <div class="text-xs text-slate-400 py-4 text-center">লোড হচ্ছে...</div>
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 flex items-center justify-between">
+                        <span id="lblSyncStatus">রিয়েল-টাইম সিনক্রোনাইজেশন চালু</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 2: PATIENTS & USER MANAGEMENT                            -->
+        <!-- ============================================================= -->
+        <section id="view-users" class="hidden space-y-4">
+            <!-- Header Controls & Search -->
+            <div class="box-panel p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div class="flex-1 flex items-center gap-2 max-w-md">
+                    <div class="relative w-full">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="userSearchInput" oninput="AdminApp.filterUsers()" placeholder="রোগীর নাম বা ইউজারনেম দিয়ে খুঁজুন..." class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                    </div>
+                    <select id="userRoleFilter" onchange="AdminApp.filterUsers()" class="min-h-[38px] px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-semibold focus:outline-none focus:border-[#0284c7]">
+                        <option value="all" id="optRoleAll">সকল রোল</option>
+                        <option value="admin" id="optRoleAdmin">শুধু অ্যাডমিন</option>
+                        <option value="user" id="optRoleUser">সাধারণ রোগী</option>
+                    </select>
+                </div>
+
+                <button onclick="AdminApp.openAddUserModal()" class="min-h-[38px] px-4 py-2 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span id="btnAddUser">নতুন ইউজার যোগ করুন</span>
+                </button>
+            </div>
+
+            <!-- Users Table -->
+            <div class="box-panel overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold">
+                                <th class="p-3.5 sm:px-4" id="thUser">রোগী ও ইউজার</th>
+                                <th class="p-3.5 sm:px-4" id="thRole">রোল / মর্যাদা</th>
+                                <th class="p-3.5 sm:px-4 font-mono text-center" id="thPrescriptions">প্রেসক্রিপশন</th>
+                                <th class="p-3.5 sm:px-4 font-mono text-center" id="thLogs">সেবন লগ</th>
+                                <th class="p-3.5 sm:px-4" id="thJoined">নিবন্ধনের তারিখ</th>
+                                <th class="p-3.5 sm:px-4 text-right" id="thActions">অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                            <tr>
+                                <td colspan="6" class="p-6 text-center text-slate-400 text-xs">ইউজার ডাটা লোড হচ্ছে...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 3: GLOBAL MEDICINE & INJECTION SCHEDULES MONITOR         -->
+        <!-- ============================================================= -->
+        <section id="view-routines" class="hidden space-y-4">
+            <!-- Filter Bar -->
+            <div class="box-panel p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div class="flex-1 flex flex-wrap items-center gap-2.5">
+                    <div class="relative min-w-[200px] flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="routineSearchInput" oninput="AdminApp.filterRoutines()" placeholder="ঔষধের নাম বা রোগীর নাম খুঁজুন..." class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                    </div>
+                    <select id="routineTypeFilter" onchange="AdminApp.filterRoutines()" class="min-h-[38px] px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-semibold focus:outline-none">
+                        <option value="all" id="optMedTypeAll">সকল ঔষধের ধরন</option>
+                        <option value="tablet">ট্যাবলেট (Tablet)</option>
+                        <option value="capsule">ক্যাপসুল (Capsule)</option>
+                        <option value="syrup">সিরাপ (Syrup)</option>
+                        <option value="injection">ইনজেকশন (Injection)</option>
+                        <option value="drops">ড্রপস (Drops)</option>
+                        <option value="ointment">মলম (Ointment)</option>
+                    </select>
+                    <label class="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-xs font-bold text-rose-700 dark:text-rose-400">
+                        <input type="checkbox" id="routineLowStockFilter" onchange="AdminApp.filterRoutines()" class="accent-rose-600 rounded">
+                        <span id="lblFilterLowStock">শুধু লো-স্টক (≤ ৩)</span>
+                    </label>
+                </div>
+                <div class="text-right text-xs text-slate-500 font-mono">
+                    <span id="routinesFilteredCount">0</span> <span id="lblItemsFound">টি শিডিউল দৃশ্যমান</span>
+                </div>
+            </div>
+
+            <!-- Master Routines Grid / Table -->
+            <div class="box-panel overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold">
+                                <th class="p-3.5 sm:px-4" id="thMedName">ঔষধ ও ধরন</th>
+                                <th class="p-3.5 sm:px-4" id="thMedPatient">রোগী</th>
+                                <th class="p-3.5 sm:px-4" id="thMedDosage">ডোজ ও নির্দেশ</th>
+                                <th class="p-3.5 sm:px-4 font-mono" id="thMedTime">সময়সূচি</th>
+                                <th class="p-3.5 sm:px-4 font-mono text-center" id="thMedStock">মজুদ (Stock)</th>
+                                <th class="p-3.5 sm:px-4" id="thMedDuration">মেয়াদকাল</th>
+                            </tr>
+                        </thead>
+                        <tbody id="routinesTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                            <tr>
+                                <td colspan="6" class="p-6 text-center text-slate-400 text-xs">প্রেসক্রিপশন ডাটা লোড হচ্ছে...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 4: CLINICAL AUDIT TRAIL & LOGS                           -->
+        <!-- ============================================================= -->
+        <section id="view-logs" class="hidden space-y-4">
+            <!-- Search & Actions -->
+            <div class="box-panel p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div class="flex-1 flex flex-wrap items-center gap-2.5">
+                    <div class="relative min-w-[220px] flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="logsSearchInput" onkeydown="if(event.key==='Enter') AdminApp.searchLogs()" placeholder="ঔষধ বা রোগীর নাম দিয়ে খুঁজুন (Enter চাপুন)..." class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7] transition">
+                    </div>
+                    <select id="logsActionFilter" onchange="AdminApp.searchLogs()" class="min-h-[38px] px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-semibold focus:outline-none">
+                        <option value="" id="optActionAll">সকল অ্যাকশন</option>
+                        <option value="Dose" id="optActionDose">ডোজ সেবন / Dose Taken</option>
+                        <option value="Skip" id="optActionSkip">মিস / Skipped</option>
+                        <option value="Routine" id="optActionRoutine">রুটিন তৈরি ও পরিবর্তন</option>
+                    </select>
+                    <button onclick="AdminApp.searchLogs()" class="min-h-[38px] px-3.5 rounded-md bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                        <span id="btnFilterLogs">ফিল্টার</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="AdminApp.exportLogsCsv()" class="min-h-[38px] px-3.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span id="btnExportCsv">CSV এক্সপোর্ট</span>
+                    </button>
+                    <button onclick="AdminApp.exportLogsJson()" class="min-h-[38px] px-3.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-xs">
+                        <i data-lucide="file-json" class="w-3.5 h-3.5 text-sky-600"></i>
+                        <span id="btnExportJson">JSON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logs Table -->
+            <div class="box-panel overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-bold">
+                                <th class="p-3.5 sm:px-4 font-mono" id="thLogTime">সময় ও তারিখ</th>
+                                <th class="p-3.5 sm:px-4" id="thLogPatient">রোগীর নাম</th>
+                                <th class="p-3.5 sm:px-4" id="thLogMedicine">ঔষধ</th>
+                                <th class="p-3.5 sm:px-4" id="thLogAction">সম্পন্ন অ্যাকশন</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody" class="divide-y divide-slate-200 dark:divide-slate-800">
+                            <tr>
+                                <td colspan="4" class="p-6 text-center text-slate-400 text-xs">অডিট ডাটা লোড হচ্ছে...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-950/70 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <span class="text-slate-500 font-mono" id="logsPaginationSummary">পৃষ্ঠা ১ / ১</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="AdminApp.prevLogsPage()" id="btnLogsPrev" disabled class="min-h-[34px] px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition">← পূর্ববর্তী</button>
+                        <button onclick="AdminApp.nextLogsPage()" id="btnLogsNext" disabled class="min-h-[34px] px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition">পরবর্তী →</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 5: DATABASE & SYSTEM OPERATIONS                          -->
+        <!-- ============================================================= -->
+        <section id="view-database" class="hidden space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Backup & Download Card -->
+                <div class="box-panel p-5 space-y-3">
+                    <div class="flex items-center gap-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                        <div class="w-8 h-8 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 flex items-center justify-center">
+                            <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white" id="titleDbBackup">ডাটাবেজ ব্যাকআপ ও স্ন্যাপশট</h3>
+                            <p class="text-[11px] text-slate-500" id="subDbBackup">সার্ভার ফাইল সরাসরি কম্পিউটারে সেভ করুন</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" id="descDbBackup">
+                        মেডিকেয়ারের প্রকৃত SQLite ডাটাবেজ ফাইল (<code class="font-mono text-sky-600 font-bold">medicare.sqlite</code>) ডাউনলোড করে অফলাইনে নিরাপদ ব্যাকআপ রাখুন। যেকোনো সময় এটি দিয়ে পুরো সিস্টেমের সকল রোগী ও প্রেসক্রিপশন রিস্টোর করা সম্ভব।
+                    </p>
+                    <div class="pt-2">
+                        <a href="/api/admin/backup-db" class="w-full min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                            <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                            <span id="btnDownloadSqliteFile">ডাটাবেজ (.sqlite) ডাউনলোড করুন</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Database Maintenance & Compact Card -->
+                <div class="box-panel p-5 space-y-3">
+                    <div class="flex items-center gap-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                        <div class="w-8 h-8 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 flex items-center justify-center">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white" id="titleDbMaint">ইনডেক্স ও ভ্যাকুয়াম অপ্টিমাইজ</h3>
+                            <p class="text-[11px] text-slate-500" id="subDbMaint">ডাটাবেজের জায়গা সংকুচিত ও স্পিড বৃদ্ধি</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed" id="descDbMaint">
+                        SQLite VACUUM কমান্ড চালানোর মাধ্যমে অব্যবহৃত ফাঁকা স্থান পুনুরুদ্ধার করা হয় এবং কোয়েরি সার্চ স্পিড বৃদ্ধি পায়।
+                    </p>
+                    <div class="pt-2">
+                        <button onclick="AdminApp.vacuumDatabase()" class="w-full min-h-[44px] py-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+                            <span id="btnRunVacuum">ভ্যাকুয়াম চালান (VACUUM Database)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Architecture & Multi-Device Security Card -->
+            <div class="box-panel p-5 space-y-3">
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2" id="titleArchSecurity">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+                    মাল্টি-ডিভাইস ও পেশেন্ট ডাটা সিকিউরিটি
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                        <p class="font-bold text-slate-800 dark:text-slate-200 mb-1" id="lblSec1Title">আইসোলেশন আর্কিটেকচার</p>
+                        <p class="text-slate-500 text-[11px]" id="lblSec1Desc">প্রত্যেক রোগীর প্রেসক্রিপশন ও সেবন হিস্ট্রি স্বতন্ত্র ইউজার আইডিতে সংরক্ষিত থাকে।</p>
+                    </div>
+                    <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                        <p class="font-bold text-slate-800 dark:text-slate-200 mb-1" id="lblSec2Title">HMAC সাইন্ড সেশন টোকেন</p>
+                        <p class="text-slate-500 text-[11px]" id="lblSec2Desc">সার্ভার রিস্টার্ট হলেও ক্লায়েন্ট ব্রাউজারে টোকেন সচল থাকে এবং সর্বোচ্চ নিরাপত্তা নিশ্চিত করে।</p>
+                    </div>
+                    <div class="p-3 rounded-md bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                        <p class="font-bold text-slate-800 dark:text-slate-200 mb-1" id="lblSec3Title">ক্রস-ডিভাইস রিমাইন্ডার</p>
+                        <p class="text-slate-500 text-[11px]" id="lblSec3Desc">মোবাইল কিংবা ল্যাপটপ থেকে রোগী লগইন করলেই সেন্ট্রাল সার্ভার হতে শিডিউল সিঙ্ক হয়ে যায়।</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- ADMIN LOGIN GATEKEEPER MODAL                                  -->
+    <!-- (Shown when user is not logged in or not admin)               -->
+    <!-- ============================================================= -->
+    <div id="adminLoginGateModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-6 shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 rounded-md bg-[#0f2744] dark:bg-[#0284c7] text-white flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i data-lucide="shield-alert" class="w-7 h-7"></i>
+                </div>
+                <h3 class="font-extrabold text-lg text-slate-900 dark:text-white" id="titleAdminLoginModal">অ্যাডমিন লগইন</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="subAdminLoginModal">ক্লিনিক্যাল অ্যাডমিন প্যানেলে প্রবেশের প্রমাণীকরণ</p>
+            </div>
+
+            <div id="adminLoginError" class="hidden p-2.5 rounded bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs mb-3.5"></div>
+
+            <form onsubmit="AdminApp.handleAdminLogin(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAdminUsername">ইউজারনেম</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="adminGateUsername" required value="admin" class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAdminPassword">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="password" id="adminGatePassword" required value="admin123" class="w-full pl-9 pr-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                    </div>
+                </div>
+
+                <button type="submit" id="btnAdminGateSubmit" class="w-full min-h-[44px] py-2.5 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs sm:text-sm font-bold shadow-xs transition flex items-center justify-center gap-2 active:scale-95">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>লগইন করুন</span>
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-center space-y-2">
+                <button type="button" onclick="AdminApp.fillDemoCredentials()" class="text-xs text-[#0284c7] dark:text-sky-400 hover:underline font-semibold" id="btnQuickDemoFill">
+                    ⚡ ডেমো অ্যাডমিন ক্রেডেনশিয়াল (admin / admin123)
+                </button>
+                <button type="button" onclick="AdminApp.loginOfflineMode()" class="w-full min-h-[38px] py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 shadow-xs">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                    <span>সার্ভার ছাড়া অফলাইন মোডে প্রবেশ করুন</span>
+                </button>
+                <div>
+                    <a href="/" class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" id="linkBackPatientPortal">← সাধারণ রোগী পোর্টালে ফিরে যান</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: ADD NEW USER                                           -->
+    <!-- ============================================================= -->
+    <div id="modalAddUser" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 sm:p-6 shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-sky-600"></i>
+                    <span id="titleAddUserModal">নতুন ইউজার যোগ করুন</span>
+                </h3>
+                <button onclick="AdminApp.closeModal('modalAddUser')" class="min-h-[36px] min-w-[36px] p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="AdminApp.submitAddUser(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAddUserFullname">পূর্ণ নাম</label>
+                    <input type="text" id="addFullName" required placeholder="যেমন: ডা. শরিফুল ইসলাম বা রোগী কামাল" class="w-full px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAddUserUsername">ইউজারনেম</label>
+                    <input type="text" id="addUsername" required placeholder="যেমন: patient01" class="w-full px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAddUserPassword">পাসওয়ার্ড</label>
+                    <input type="password" id="addPassword" required placeholder="কমপক্ষে ৪ অক্ষরের পাসওয়ার্ড" class="w-full px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblAddUserRole">রোল / পদমর্যাদা</label>
+                    <select id="addRole" class="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-semibold focus:outline-none">
+                        <option value="user" id="optAddRoleUser">সাধারণ রোগী (Patient)</option>
+                        <option value="admin" id="optAddRoleAdmin">সিস্টেম অ্যাডমিন (Admin)</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2">
+                    <button type="button" onclick="AdminApp.closeModal('modalAddUser')" class="min-h-[38px] px-3.5 rounded-md border border-slate-300 dark:border-slate-700 text-xs font-bold" id="btnCancelAddUser">বাতিল</button>
+                    <button type="submit" class="min-h-[38px] px-4 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs" id="btnSaveAddUser">সংরক্ষণ করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: RESET PASSWORD                                         -->
+    <!-- ============================================================= -->
+    <div id="modalResetPassword" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 sm:p-6 shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="key-round" class="w-5 h-5 text-amber-500"></i>
+                    <span id="titleResetPassModal">পাসওয়ার্ড রিসেট করুন</span>
+                </h3>
+                <button onclick="AdminApp.closeModal('modalResetPassword')" class="min-h-[36px] min-w-[36px] p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="AdminApp.submitResetPassword(event)" class="space-y-3.5">
+                <input type="hidden" id="resetPassUserId">
+                <p class="text-xs text-slate-600 dark:text-slate-300">
+                    ইউজার: <strong id="resetPassUserLabel" class="font-bold text-sky-600"></strong>
+                </p>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1" id="lblNewPassword">নতুন পাসওয়ার্ড</label>
+                    <input type="password" id="resetPassNew" required placeholder="নতুন পাসওয়ার্ড লিখুন..." class="w-full px-3.5 py-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:border-[#0284c7]">
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2">
+                    <button type="button" onclick="AdminApp.closeModal('modalResetPassword')" class="min-h-[38px] px-3.5 rounded-md border border-slate-300 dark:border-slate-700 text-xs font-bold" id="btnCancelResetPass">বাতিল</button>
+                    <button type="submit" class="min-h-[38px] px-4 rounded-md bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold shadow-xs" id="btnSaveResetPass">রিসেট সম্পন্ন করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: VIEW USER ROUTINES                                     -->
+    <!-- ============================================================= -->
+    <div id="modalUserRoutines" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-2xl w-full p-5 sm:p-6 shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-3">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i data-lucide="pill" class="w-5 h-5 text-sky-600"></i>
+                    <span>রোগীর প্রেসক্রিপশন ও রুটিন তালিকা</span>
+                </h3>
+                <button onclick="AdminApp.closeModal('modalUserRoutines')" class="min-h-[36px] min-w-[36px] p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="text-xs text-slate-600 dark:text-slate-400 mb-3" id="userRoutinesModalHeader">
+                রোগী: <strong id="userRoutinesModalName" class="text-slate-900 dark:text-white font-bold"></strong>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="userRoutinesModalList">
+                <div class="text-xs text-slate-400 py-6 text-center">লোড হচ্ছে...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MODAL: ADMIN CONFIRMATION DIALOG (No browser alert/confirm)     -->
+    <!-- ============================================================= -->
+    <div id="adminConfirmModal" onclick="if(event.target === this) AdminApp.closeConfirmModal()" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-lg max-w-sm w-full p-5 text-center shadow-2xl relative border border-slate-300 dark:border-slate-700 modal-animate">
+            <div id="adminConfirmIconBox" class="w-12 h-12 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-200 dark:border-rose-800 mx-auto flex items-center justify-center mb-3">
+                <i id="adminConfirmIcon" data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 id="adminConfirmTitle" class="text-base font-bold text-slate-900 dark:text-white">আপনি কি নিশ্চিত?</h3>
+            <p id="adminConfirmDesc" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                এই প্রক্রিয়াটি সম্পাদন করার পর পরিবর্তনগুলো স্থায়ী হবে।
+            </p>
+            <div class="mt-5 flex items-center gap-2">
+                <button type="button" onclick="AdminApp.closeConfirmModal()" class="flex-1 min-h-[42px] py-2 rounded-md border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition active:scale-95" id="btnAdminConfirmCancel">
+                    বাতিল
+                </button>
+                <button type="button" onclick="AdminApp.executeConfirmAction()" id="btnAdminConfirmExecute" class="flex-1 min-h-[42px] py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs active:scale-95">
+                    নিশ্চিত করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="adminToastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- Modular Admin Script -->
+    <script src="js/admin.js"></script>
+</body>
+</html>

@@ -225,6 +225,7 @@ window.MediCareAuth = (function () {
                 id: data.user.id,
                 username: data.user.username,
                 full_name: data.user.full_name,
+                role: data.user.role || (data.user.username === 'admin' || data.user.username === 'demo' ? 'admin' : 'user'),
                 token: data.token
             });
 
@@ -331,6 +332,7 @@ window.MediCareAuth = (function () {
                     id: data.user.id,
                     username: data.user.username,
                     full_name: data.user.full_name,
+                    role: data.user.role || 'admin',
                     token: data.token
                 });
                 isServerMode = true;
@@ -349,6 +351,7 @@ window.MediCareAuth = (function () {
             id: 'user_demo_01',
             username: 'demo',
             full_name: 'ডা. শরিফুল ইসলাম (Dr. Shariful)',
+            role: 'admin',
             token: 'demo_token_' + Date.now()
         };
         saveSessionLocally(demoUser);

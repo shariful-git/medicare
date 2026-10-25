@@ -60,6 +60,18 @@ A professional, high-precision clinical medicine and injection schedule, reminde
     - **Fresh Database State**: Starts completely clean with zero fake demo routines and zero sample history logs.
     - **1-Click Fresh Database Reset (`ডাটাবেজ ফ্রেশ / রিসেট`)**: Accessible directly from both the User Profile Dropdown and the Tools tab. Completely wipes legacy records and restores a fresh slate.
 
+11. **🛡️ Dedicated Clinical Admin Panel (`/admin`)**:
+    - **Instant Access Route**: Accessible at `http://localhost:3000/admin` (or `/admin.html`), or via the dedicated **"অ্যাডমিন"** button in the header and User Profile menu.
+    - **Pre-Configured Admin Credentials**:
+      - **Super Admin**: `admin` / `admin123`
+      - **Clinical Demo Admin**: `demo` / `123456`
+    - **Executive KPI Dashboard**: Total registered patients, active clinical routines, today's system-wide adherence rate (%), and urgent low-stock (≤ 3 doses) warnings.
+    - **Server & Database Diagnostics**: Live process uptime, Node.js version, RAM footprint (RSS / Heap), active database engine (`sqlite3` / `node:sqlite`), database file size on disk (`medicare.sqlite`).
+    - **User & Patient Management**: View all registered accounts, create new patients/admins, promote/demote roles, reset passwords, view patient routines, and cascade-delete accounts.
+    - **Master Prescription & Stock Monitor**: System-wide view of all medicines and injections across all patients with type filtering (Tablets, Injections, Syrups, etc.) and low-stock alerts.
+    - **Live Clinical Audit Trail**: Chronological event logs of doses taken, skipped, and modified with real-time search, action filters, pagination, and 1-click CSV/JSON export.
+    - **Database Operations**: 1-click live `.sqlite` file snapshot backup download and SQLite VACUUM optimization.
+
 ---
 
 ## 📁 Project Folder Structure
@@ -67,6 +79,7 @@ A professional, high-precision clinical medicine and injection schedule, reminde
 ```text
 medi/
 ├── index.html                                  # Primary boxy clinical web application
+├── admin.html                                  # Clinical Admin Panel & Server Control Suite (/admin)
 ├── package.json                                # Node.js package definition & scripts
 ├── server.js                                   # Native SQLite backend server & REST API
 ├── medicare.sqlite                             # Genuine SQLite relational database file
@@ -74,6 +87,7 @@ medi/
 ├── css/
 │   └── style.css                               # Boxy tokens, watermark, animations & clinical styles
 └── js/
+    ├── admin.js                                # Admin panel controller & diagnostics manager
     ├── auth.js                                 # User authentication & profile manager
     ├── i18n.js                                 # Bangla & English localization and BD detection engine
     ├── config.js                               # Schema and default configurations
